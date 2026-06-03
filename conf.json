@@ -1,0 +1,46 @@
+{
+  "CACertPath": "/etc/ssl/ca.pem",
+  "CAOrganization": "MyCompany",
+  "CAValidDays": 79000,
+  "CACertificate": {
+    "Name": "RootCA",
+    "Path": "/etc/ssl/root.crt",
+    "OrganizationName": "MyCompany",
+    "Email": "admin@example.com",
+    "IPs": [],
+    "DNSNames": [],
+    "ValidDays": 3650,
+    "RenewThresholdDays": 30
+  },
+  "Certificates": [
+    {
+      "Name": "service‑api",
+      "Path": "/etc/ssl/service-api.crt",
+      "OrganizationName": "MyCompany",
+      "Email": "devops@example.com",
+      "IPs": ["10.0.0.5"],
+      "DNSNames": ["api.example.com"],
+      "ValidDays": 0,
+      "RenewThresholdDays": 10
+    },
+    {
+      "Name": "web‑frontend",
+      "Path": "/etc/ssl/web-frontend.crt",
+      "OrganizationName": "MyCompany",
+      "Email": "web@example.com",
+      "IPs": [],
+      "DNSNames": ["www.example.com", "example.com"],
+      "ValidDays": 180,
+      "RenewThresholdDays": 15
+    }
+  ],
+  "CertificatesDefaults": {
+    "ValidDays": 365,
+    "RenewThresholdDays": 30,
+    "OrganizationName": "MyCompany",
+    "Email": "default@example.com",
+    "IPs": [],
+    "DNSNames": []
+  }
+}
+
