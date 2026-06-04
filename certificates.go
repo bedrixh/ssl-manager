@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"os"
 	"time"
@@ -106,7 +105,6 @@ func GenerateSSLCert(cert *CertificateConfig) {
 
 func GetCertFromDisk(path string) x509.Certificate {
 	data, err := os.ReadFile(path)
-	fmt.Println(len(data))
 	if err != nil {
 		panic(err)
 	}
