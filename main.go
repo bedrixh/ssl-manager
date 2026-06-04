@@ -2,10 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
-
-	"github.com/BurntSushi/toml"
 )
 
 var Config *Configuration
@@ -17,11 +14,9 @@ func main() {
 	flag.Parse()
 
 	Config = LoadConfig(*argConfFilePtr)
-	bytes, _ := toml.Marshal(Config)
-	fmt.Println(string(bytes))
-	fmt.Println(GetValidDaysRemaining(GetCertFromDisk("./CA/cert.pem")))
 
 	if *argGenCAPtr == true {
+		os.MkdirAll(Config.CACertificate.Path,0750)
 		GenerateCACert(&Config.CACertificate)
 	}
 
