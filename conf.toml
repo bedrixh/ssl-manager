@@ -1,32 +1,26 @@
 [CACertificate]
 Name = "RootCA"
-Path = "/etc/ssl/root.crt"
-OrganizationName = "MyCompany"
-Email = "admin@example.com"
-IPs = []
-DNSNames = []
+Path = "./CA/"
+OrganizationName = "bedrich kucera"
+Email = "bekucera@gmail.com"
 ValidDays = 79000
 RenewThresholdDays = 30
 
 [[Certificates]]
 Name = "service-api"
-Path = "/etc/ssl/service-api.crt"
-OrganizationName = "MyCompany"
-Email = "devops@example.com"
+Path = "./service-api"
 IPs = ["10.0.0.5"]
 DNSNames = ["api.example.com"]
 
 [[Certificates]]
 Name = "web-frontend"
-Path = "/etc/ssl/web-frontend.crt"
-OrganizationName = "MyCompany"
-Email = "web@example.com"
+Path = "./web-frontend"
 IPs = []
 DNSNames = ["www.example.com", "example.com"]
 
 [CertificatesDefaults]
 ValidDays = 20
 RenewThresholdDays = 7
-OrganizationName = "MyCompany"
-Email = "default@example.com"
+OrganizationName = "bedrich kucera"
+Email = "bekucera@gmail.com"
 
