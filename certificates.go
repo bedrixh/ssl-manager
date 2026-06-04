@@ -20,24 +20,23 @@ func getPublicCertPath(dirPath string) string {
 	return dirPath + "/cert.pem"
 }
 
-func GenerateCACert(config *Configuration) {
+func GenerateCACert(certConfig *CertificateConfig) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
 
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Duration(config.CACertificate.ValidDays) * 24 * time.Hour)
+	notBefore, notAfter := getValidFromAfter(certConfig)
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		panic(err)
 	}
 
-	template := x509.Certificate{
+	certTemplate := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{config.CACertificate.OrganizationName},
+			Organization: []string{certConfig.OrganizationName},
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
@@ -47,14 +46,14 @@ func GenerateCACert(config *Configuration) {
 		IsCA:                  true,
 	}
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	certBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &priv.PublicKey, priv)
 	if err != nil {
 		panic(err)
 	}
 
-	SaveCertToDisk(getPublicCertPath(config.CACertificate.Path), certBytes)
+	SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
 
-	SaveKeyToDisk(getPrivateKeyPath(config.CACertificate.Path), *priv)
+	SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), *priv)
 }
 
 func pemBlockFromKey(priv *ecdsa.PrivateKey) *pem.Block {
@@ -79,18 +78,12 @@ func GenerateSSLCert(cert *CertificateConfig) {
 		panic(err)
 	}
 
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Duration(cert.ValidDays) * 24 * time.Hour)
+	notBefore, notAfter := getValidFromAfter(cert)
 
 	certTemplate := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization:  []string{"Company, INC."},
-			Country:       []string{"US"},
-			Province:      []string{""},
-			Locality:      []string{"San Francisco"},
-			StreetAddress: []string{"Golden Gate Bridge"},
-			PostalCode:    []string{"94016"},
+			Organization:  []string{cert.OrganizationName},
 		},
 		DNSNames:    cert.DNSNames,
 		NotBefore:   notBefore,
@@ -101,7 +94,7 @@ func GenerateSSLCert(cert *CertificateConfig) {
 
 	CAPrivateBytes := GetKeyFromDisk(getPrivateKeyPath(Config.CACertificate.Path))
 
-	CACert := GetCertFromDisk(getPublicCertPath(cert.Path))
+	CACert := GetCertFromDisk(getPublicCertPath(Config.CACertificate.Path))
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, &CACert, pub, CAPrivateBytes)
 	if err != nil {
@@ -118,12 +111,12 @@ func GetCertFromDisk(path string) x509.Certificate {
 		panic(err)
 	}
 
-	block, _ := pem.Decode(data)
-	if block == nil || block.Type != "CERTIFICATE" {
+	certBlock, _ := pem.Decode(data)
+	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
 		panic("error decoding cert from disk")
 	}
 
-	cert, err := x509.ParseCertificate(block.Bytes)
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
 	if err != nil {
 		panic(err)
 	}
@@ -167,3 +160,18 @@ func GetValidDaysRemaining(cert x509.Certificate) int64 {
 	// 86400 is 1 day in seconds
 	return (cert.NotAfter.Unix() - time.Now().Unix()) / 86400
 }
+
+func getValidFromAfter(certConfig *CertificateConfig) (time.Time, time.Time) {
+	validFrom := time.Now()
+	validTo := validFrom.Add(time.Duration(certConfig.ValidDays) * 24 * time.Hour)
+	return validFrom, validTo
+}
+
+func getCertificateExists(certConfig *CertificateConfig) bool{
+	fileInfo, err := os.Stat(getPublicCertPath(certConfig.Path))
+	if err != nil {
+		return false
+	} 
+	return fileInfo.IsDir() == false 
+}
+

@@ -88,5 +88,14 @@ func populateDefault(config *Configuration) {
 		if certificateConfig.ValidDays == 0 {
 			certificateConfig.ValidDays = config.CertificatesDefaults.ValidDays
 		}
+
+		if certificateConfig.OrganizationName == "" {
+			certificateConfig.OrganizationName = config.CertificatesDefaults.OrganizationName
+		}
+
+		if certificateConfig.Email == "" {
+			certificateConfig.Email = config.CertificatesDefaults.Email
+		}
+
 	}
 }
