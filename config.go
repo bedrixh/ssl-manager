@@ -97,5 +97,9 @@ func populateDefault(config *Configuration) {
 			certificateConfig.Email = config.CertificatesDefaults.Email
 		}
 
+		if certificateConfig.RenewThresholdDays == 0 {
+			certificateConfig.RenewThresholdDays = config.CertificatesDefaults.RenewThresholdDays
+		}
+
 	}
 }

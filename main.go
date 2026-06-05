@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 )
 
@@ -32,12 +33,13 @@ func renewCerts() {
 		certExists := getCertificateExists(certificateConfig)
 		if certExists {
 			daysRemaining := GetValidDaysRemaining(GetCertFromDisk(getPublicCertPath(certificateConfig.Path)))
-
-			if daysRemaining <= int64(certificateConfig.RenewThresholdDays) {
+			fmt.Println(certificateConfig.RenewThresholdDays)
+			fmt.Println(daysRemaining)
+			if int64(certificateConfig.RenewThresholdDays) >= daysRemaining  {
 				GenerateSSLCert(certificateConfig)
 			}
 		} else {
-			os.MkdirAll(certificateConfig.Path,0750)
+			os.MkdirAll(certificateConfig.Path,0750)	
 			GenerateSSLCert(certificateConfig)
 		}
 	}
