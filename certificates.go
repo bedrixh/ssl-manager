@@ -19,17 +19,17 @@ func getPublicCertPath(dirPath string) string {
 	return dirPath + "/cert.pem"
 }
 
-func GenerateCACert(certConfig *CertificateConfig) {
+func GenerateCACert(certConfig *CertificateConfig) error {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	notBefore, notAfter := getValidFromAfter(certConfig)
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	certTemplate := x509.Certificate{
@@ -47,20 +47,22 @@ func GenerateCACert(certConfig *CertificateConfig) {
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &priv.PublicKey, priv)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
 
 	SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), *priv)
+	
+	return nil
 }
 
-func pemBlockFromKey(priv *ecdsa.PrivateKey) *pem.Block {
+func pemBlockFromKey(priv *ecdsa.PrivateKey) (*pem.Block, error) {
 	b, err := x509.MarshalECPrivateKey(priv)
 	if err != nil {
-		panic(err)
+		return &pem.Block{}, err
 	}
-	return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}
+	return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}, nil
 }
 
 func GenerateSSLCert(cert *CertificateConfig) {
