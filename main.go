@@ -11,23 +11,32 @@ var Config *Configuration
 func main() {
 	argConfFilePtr := flag.String("config", "./conf.toml", "Config file to be loaded on the start of the program (can be json or toml)")
 	argGenCAPtr := flag.Bool("gen-ca", false, "Generates certification authority certificate and stores it on the disk")
-	argRenewCerts := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
+	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
+	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
 	flag.Parse()
 
 	Config = LoadConfig(*argConfFilePtr)
 
 	if *argGenCAPtr == true {
-		os.MkdirAll(Config.CACertificate.Path,0750)
-		GenerateCACert(&Config.CACertificate)
+		err := os.MkdirAll(Config.CACertificate.Path, 0750)
+		if err != nil{
+			panic(err)
+		}
+		certExists := getCertificateExists(&Config.CACertificate)
+		if (certExists == false) || (certExists == true && *argForcePtr == true) {
+			GenerateCACert(&Config.CACertificate)
+		}else{
+			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
+		}
 	}
 
-	if *argRenewCerts == true {
-		renewCerts()
+	if *argRenewCertsPtr == true {
+		renewCerts(*argForcePtr)
 	}
 
 }
 
-func renewCerts() {
+func renewCerts(force bool) {
 	for i := 0; i < len(Config.Certificates); i++ {
 		certificateConfig := &Config.Certificates[i]
 		certExists := getCertificateExists(certificateConfig)
@@ -35,11 +44,11 @@ func renewCerts() {
 			daysRemaining := GetValidDaysRemaining(GetCertFromDisk(getPublicCertPath(certificateConfig.Path)))
 			fmt.Println(certificateConfig.RenewThresholdDays)
 			fmt.Println(daysRemaining)
-			if int64(certificateConfig.RenewThresholdDays) >= daysRemaining  {
+			if int64(certificateConfig.RenewThresholdDays) >= daysRemaining {
 				GenerateSSLCert(certificateConfig)
 			}
 		} else {
-			os.MkdirAll(certificateConfig.Path,0750)	
+			os.MkdirAll(certificateConfig.Path, 0750)
 			GenerateSSLCert(certificateConfig)
 		}
 	}
