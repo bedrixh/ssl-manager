@@ -9,7 +9,7 @@ import (
 var Config *Configuration
 
 func main() {
-	argConfFilePtr := flag.String("config", "./conf.toml", "Config file to be loaded on the start of the program (can be json or toml)")
+	argConfFilePtr := flag.String("config", "./conf.toml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
 	argGenCAPtr := flag.Bool("gen-ca", false, "Generates certification authority certificate and stores it on the disk")
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
@@ -29,7 +29,10 @@ func main() {
 		}
 		certExists := getCertificateExists(&Config.CACertificate)
 		if (certExists == false) || (certExists == true && *argForcePtr == true) {
-			GenerateCACert(&Config.CACertificate)
+			err = GenerateCACert(&Config.CACertificate)
+			if err != nil {
+			panic(err)
+			}
 		} else {
 			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
 		}
@@ -65,7 +68,7 @@ func renewCerts(force bool) error {
 				fmt.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(daysRemaining))
 			}
 		} else {
-			err := os.MkdirAll(certificateConfig.Path, 0750)
+			err := os.MkdirAll(certificateConfig.Path, 0755)
 			if err != nil && err != os.ErrExist {
 				return err
 			}

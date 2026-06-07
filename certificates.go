@@ -22,7 +22,7 @@ func getPublicCertPath(dirPath string) string {
 }
 
 func GenerateCACert(certConfig *CertificateConfig) error {
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		return err
 	}
@@ -51,6 +51,8 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageAny},
 		BasicConstraintsValid: true,
 		IsCA:                  true,
+		SignatureAlgorithm:    x509.ECDSAWithSHA512,
+		PublicKeyAlgorithm:    x509.ECDSA,
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &priv.PublicKey, priv)
@@ -67,7 +69,7 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 }
 
 func GenerateSSLCert(certConfig *CertificateConfig) error {
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		return err
 	}
@@ -91,12 +93,14 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 			Organization: []string{certConfig.OrganizationName},
 			CommonName:   certConfig.CommonName,
 		},
-		DNSNames:    certConfig.DNSNames,
-		IPAddresses: certConfig.GetIPAdresses(),
-		NotBefore:   notBefore,
-		NotAfter:    notAfter,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:    x509.KeyUsageDigitalSignature,
+		DNSNames:           certConfig.DNSNames,
+		IPAddresses:        certConfig.GetIPAdresses(),
+		NotBefore:          notBefore,
+		NotAfter:           notAfter,
+		ExtKeyUsage:        []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:           x509.KeyUsageDigitalSignature,
+		SignatureAlgorithm: x509.ECDSAWithSHA512,
+		PublicKeyAlgorithm: x509.ECDSA,
 	}
 
 	CAPrivateBytes, err := GetKeyFromDisk(getPrivateKeyPath(Config.CACertificate.Path))

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"go.yaml.in/yaml/v4"
 )
 
 type Configuration struct {
@@ -53,9 +54,13 @@ func GetConfig(path string) (*Configuration, error) {
 		{
 			appConfig, err = loadTomlConfig(configBytes)
 		}
+	case strings.HasSuffix(path, ".yaml"):
+		{
+			appConfig, err = loadYamlConfig(configBytes)
+		}
 	default:
 		{
-			return nil, fmt.Errorf("unknown file type, use json or toml")
+			err = fmt.Errorf("unknown file type, use json, toml or yaml")
 		}
 	}
 	if err != nil {
@@ -83,6 +88,16 @@ func loadTomlConfig(tomlBytes []byte) (*Configuration, error) {
 		return nil, err
 	}
 	return appConfig, nil
+}
+
+func loadYamlConfig(yamlBytes []byte) (*Configuration, error) {
+	var appConfig = &Configuration{}
+	err := yaml.Unmarshal(yamlBytes, appConfig)
+	if err != nil {
+		return nil, err
+	}
+	return appConfig, nil
+
 }
 
 func populateDefault(config *Configuration) {
