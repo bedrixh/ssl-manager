@@ -15,17 +15,22 @@ func main() {
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
 	flag.Parse()
 
-	Config = LoadConfig(*argConfFilePtr)
+	var err error
+	Config, err = GetConfig(*argConfFilePtr)
+	if err != nil {
+		fmt.Println("Failed to load config")
+		panic(err)
+	}
 
 	if *argGenCAPtr == true {
 		err := os.MkdirAll(Config.CACertificate.Path, 0750)
-		if err != nil{
+		if err != nil {
 			panic(err)
 		}
 		certExists := getCertificateExists(&Config.CACertificate)
 		if (certExists == false) || (certExists == true && *argForcePtr == true) {
 			GenerateCACert(&Config.CACertificate)
-		}else{
+		} else {
 			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
 		}
 	}
@@ -34,22 +39,43 @@ func main() {
 		renewCerts(*argForcePtr)
 	}
 
+	if *argGenCAPtr == false && *argRenewCertsPtr == false {
+		flag.PrintDefaults()
+	}
 }
 
-func renewCerts(force bool) {
+func renewCerts(force bool) error {
 	for i := 0; i < len(Config.Certificates); i++ {
 		certificateConfig := &Config.Certificates[i]
 		certExists := getCertificateExists(certificateConfig)
-		if certExists {
-			daysRemaining := GetValidDaysRemaining(GetCertFromDisk(getPublicCertPath(certificateConfig.Path)))
-			fmt.Println(certificateConfig.RenewThresholdDays)
-			fmt.Println(daysRemaining)
-			if int64(certificateConfig.RenewThresholdDays) >= daysRemaining {
-				GenerateSSLCert(certificateConfig)
+		if certExists && force == false {
+			cert, err := GetCertFromDisk(getPublicCertPath(certificateConfig.Path))
+			if err != nil {
+				return err
+			}
+			daysRemaining := GetValidDaysRemaining(cert)
+			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
+				err = GenerateSSLCert(certificateConfig)
+				if err != nil {
+					return err
+				} else {
+					fmt.Printf("\"%s\": renewed successfully\n", certificateConfig.Name)
+				}
+			} else {
+				fmt.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(daysRemaining))
 			}
 		} else {
-			os.MkdirAll(certificateConfig.Path, 0750)
-			GenerateSSLCert(certificateConfig)
+			err := os.MkdirAll(certificateConfig.Path, 0750)
+			if err != nil && err != os.ErrExist {
+				return err
+			}
+			err = GenerateSSLCert(certificateConfig)
+			if err != nil {
+				return err
+			} else {
+				fmt.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
+			}
 		}
 	}
+	return nil
 }

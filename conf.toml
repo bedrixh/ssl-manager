@@ -9,7 +9,7 @@ RenewThresholdDays = 30
 [[Certificates]]
 Name = "service-api"
 Path = "./service-api"
-IPs = ["10.0.0.5"]
+IPs = ["10.0.0.300"]
 DNSNames = ["api.example.com"]
 
 [[Certificates]]

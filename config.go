@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/BurntSushi/toml"
-	"io"
+	"fmt"
+	"net"
 	"os"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 type Configuration struct {
@@ -18,6 +20,7 @@ type CertificateConfig struct {
 	Name               string
 	Path               string
 	OrganizationName   string
+	CommonName         string
 	Email              string
 	IPs                []string
 	DNSNames           []string
@@ -25,61 +28,61 @@ type CertificateConfig struct {
 	RenewThresholdDays int
 }
 
-func LoadConfig(path string) *Configuration {
-	file, err := os.Open(path)
-
-	if os.IsNotExist(err) == true {
-		panic("Cannot read config file, does not exist")
+func (c *CertificateConfig) GetIPAdresses() []net.IP {
+	var ipAdresses []net.IP = make([]net.IP, len(c.IPs))
+	for i := 0; i < len(c.IPs); i++ {
+		ipAdresses[i] = net.ParseIP(c.IPs[i])
 	}
+	return ipAdresses
+}
 
-	if os.IsPermission(err) == true {
-		panic("Cannot read config file, permission denied")
-	}
-
+func GetConfig(path string) (*Configuration, error) {
+	configBytes, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-
-	configBytes, err := io.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
 
 	appConfig := &Configuration{}
 
-	// checking config file type
-	if strings.HasSuffix(path, ".json") {
-		appConfig = loadJsonConfig(configBytes)
-	} else {
-		if strings.HasSuffix(path, ".toml") {
-			appConfig = loadTomlConfig(configBytes)
-		} else {
-			panic("unknown file type, use json or toml")
+	switch {
+	case strings.HasSuffix(path, ".json"):
+		{
+			appConfig, err = loadJsonConfig(configBytes)
 		}
+	case strings.HasSuffix(path, ".toml"):
+		{
+			appConfig, err = loadTomlConfig(configBytes)
+		}
+	default:
+		{
+			return nil, fmt.Errorf("unknown file type, use json or toml")
+		}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	populateDefault(appConfig)
 
-	return appConfig
+	return appConfig, nil
 }
 
-func loadJsonConfig(jsonBytes []byte) *Configuration {
+func loadJsonConfig(jsonBytes []byte) (*Configuration, error) {
 	var appConfig = &Configuration{}
 	err := json.Unmarshal(jsonBytes, appConfig)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return appConfig
+	return appConfig, nil
 }
 
-func loadTomlConfig(tomlBytes []byte) *Configuration {
+func loadTomlConfig(tomlBytes []byte) (*Configuration, error) {
 	var appConfig = &Configuration{}
 	err := toml.Unmarshal(tomlBytes, appConfig)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return appConfig
+	return appConfig, nil
 }
 
 func populateDefault(config *Configuration) {
