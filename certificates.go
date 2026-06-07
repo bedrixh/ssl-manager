@@ -7,20 +7,27 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 func getPrivateKeyPath(dirPath string) string {
-	return dirPath + "/key.pem"
+	return filepath.Join(dirPath, "key.pem")
 }
 func getPublicCertPath(dirPath string) string {
-	return dirPath + "/cert.pem"
+	return filepath.Join(dirPath, "cert.pem")
 }
 
 func GenerateCACert(certConfig *CertificateConfig) error {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return err
+	}
+
+	err = SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), priv)
 	if err != nil {
 		return err
 	}
@@ -36,6 +43,7 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{certConfig.OrganizationName},
+			CommonName:   certConfig.CommonName,
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
@@ -50,14 +58,69 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		return err
 	}
 
-	SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
+	err = SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
+	if err != nil {
+		return err
+	}
 
-	SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), *priv)
-	
 	return nil
 }
 
-func pemBlockFromKey(priv *ecdsa.PrivateKey) (*pem.Block, error) {
+func GenerateSSLCert(certConfig *CertificateConfig) error {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return err
+	}
+	pub := &priv.PublicKey
+
+	err = SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), priv)
+	if err != nil {
+		return err
+	}
+
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return err
+	}
+
+	notBefore, notAfter := getValidFromAfter(certConfig)
+
+	certTemplate := &x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{certConfig.OrganizationName},
+			CommonName:   certConfig.CommonName,
+		},
+		DNSNames:    certConfig.DNSNames,
+		IPAddresses: certConfig.GetIPAdresses(),
+		NotBefore:   notBefore,
+		NotAfter:    notAfter,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:    x509.KeyUsageDigitalSignature,
+	}
+
+	CAPrivateBytes, err := GetKeyFromDisk(getPrivateKeyPath(Config.CACertificate.Path))
+	if err != nil {
+		return err
+	}
+
+	CACert, err := GetCertFromDisk(getPublicCertPath(Config.CACertificate.Path))
+	if err != nil {
+		return err
+	}
+	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, pub, CAPrivateBytes)
+	if err != nil {
+		return err
+	}
+	err = SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getPemBlockFromKey(priv *ecdsa.PrivateKey) (*pem.Block, error) {
 	b, err := x509.MarshalECPrivateKey(priv)
 	if err != nil {
 		return &pem.Block{}, err
@@ -65,98 +128,73 @@ func pemBlockFromKey(priv *ecdsa.PrivateKey) (*pem.Block, error) {
 	return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}, nil
 }
 
-func GenerateSSLCert(cert *CertificateConfig) {
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	pub := &priv.PublicKey
-
-	SaveKeyToDisk(getPrivateKeyPath(cert.Path), *priv)
-
-	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	if err != nil {
-		panic(err)
-	}
-
-	notBefore, notAfter := getValidFromAfter(cert)
-
-	certTemplate := &x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization:  []string{cert.OrganizationName},
-		},
-		DNSNames:    cert.DNSNames,
-		NotBefore:   notBefore,
-		NotAfter:    notAfter,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:    x509.KeyUsageDigitalSignature,
-	}
-
-	CAPrivateBytes := GetKeyFromDisk(getPrivateKeyPath(Config.CACertificate.Path))
-
-	CACert := GetCertFromDisk(getPublicCertPath(Config.CACertificate.Path))
-
-	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, &CACert, pub, CAPrivateBytes)
-	if err != nil {
-		panic(err)
-	}
-	SaveCertToDisk(getPublicCertPath(cert.Path), certBytes)
-
-}
-
-func GetCertFromDisk(path string) x509.Certificate {
+func GetCertFromDisk(path string) (*x509.Certificate, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	certBlock, _ := pem.Decode(data)
 	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
-		panic("error decoding cert from disk")
+		return nil, fmt.Errorf("error decoding cert from disk")
 	}
 
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return *cert
+	return cert, nil
 }
 
-func GetKeyFromDisk(path string) *ecdsa.PrivateKey {
+func GetKeyFromDisk(path string) (*ecdsa.PrivateKey, error) {
 	privatePEMBytes, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	privateBlock, _ := pem.Decode(privatePEMBytes)
-	if privateBlock.Type != "EC PRIVATE KEY" {
-		panic("error decoding key from disk")
+	if privateBlock == nil || privateBlock.Type != "EC PRIVATE KEY" {
+		return nil, fmt.Errorf("error decoding key from disk (%s)", path)
 	}
 
-	PrivateKey, _ := x509.ParseECPrivateKey(privateBlock.Bytes)
-	return PrivateKey
+	privateKey, err := x509.ParseECPrivateKey(privateBlock.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	return privateKey, nil
 }
 
-func SaveCertToDisk(path string, certBytes []byte) {
+func SaveCertToDisk(path string, certBytes []byte) error {
 	certOut, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+	if err != nil {
+		return err
+	}
+
 	defer certOut.Close()
+	return nil
 }
 
-func SaveKeyToDisk(path string, privateKey ecdsa.PrivateKey) {
+func SaveKeyToDisk(path string, privateKey *ecdsa.PrivateKey) error {
 	privateKeyFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	pem.Encode(privateKeyFile, pemBlockFromKey(&privateKey))
+
+	privateKeyPemBlock, err := getPemBlockFromKey(privateKey)
+	if err != nil {
+		return err
+	}
+	pem.Encode(privateKeyFile, privateKeyPemBlock)
 	defer privateKeyFile.Close()
+
+	return nil
 }
 
-func GetValidDaysRemaining(cert x509.Certificate) int64 {
+func GetValidDaysRemaining(cert *x509.Certificate) int64 {
 	// 86400 is 1 day in seconds
 	return (cert.NotAfter.Unix() - time.Now().Unix()) / 86400
 }
@@ -167,11 +205,10 @@ func getValidFromAfter(certConfig *CertificateConfig) (time.Time, time.Time) {
 	return validFrom, validTo
 }
 
-func getCertificateExists(certConfig *CertificateConfig) bool{
+func getCertificateExists(certConfig *CertificateConfig) bool {
 	fileInfo, err := os.Stat(getPublicCertPath(certConfig.Path))
 	if err != nil {
 		return false
-	} 
-	return fileInfo.IsDir() == false 
+	}
+	return fileInfo.IsDir() == false
 }
-
