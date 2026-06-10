@@ -31,7 +31,7 @@ func main() {
 		if (certExists == false) || (certExists == true && *argForcePtr == true) {
 			err = GenerateCACert(&Config.CACertificate)
 			if err != nil {
-			panic(err)
+			panic(fmt.Errorf("Error generating CA certificate (%s)",err))
 			}
 		} else {
 			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
@@ -39,7 +39,10 @@ func main() {
 	}
 
 	if *argRenewCertsPtr == true {
-		renewCerts(*argForcePtr)
+		err = renewCerts(*argForcePtr)
+		if err != nil {
+			panic(fmt.Errorf("Error renewing certificates (%s)",err))
+		}
 	}
 
 	if *argGenCAPtr == false && *argRenewCertsPtr == false {

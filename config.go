@@ -21,7 +21,6 @@ type CertificateConfig struct {
 	Name               string
 	Path               string
 	OrganizationName   string
-	CommonName         string
 	Email              string
 	IPs                []string
 	DNSNames           []string
@@ -67,7 +66,12 @@ func GetConfig(path string) (*Configuration, error) {
 		return nil, err
 	}
 
-	populateDefault(appConfig)
+	populateDefaults(appConfig)
+
+	err = validateConfig(appConfig)
+	if err != nil {
+		return nil, fmt.Errorf("Config validation error (%s)", err)
+	}
 
 	return appConfig, nil
 }
@@ -100,7 +104,35 @@ func loadYamlConfig(yamlBytes []byte) (*Configuration, error) {
 
 }
 
-func populateDefault(config *Configuration) {
+func validateConfig(config *Configuration) error {
+	for i := 0; i < len(config.Certificates); i++ {
+		certConfig := &config.Certificates[i]
+		err := validateCertificateConfig(certConfig)
+		if err != nil {
+			return fmt.Errorf("Certificate: %s (%s)", certConfig.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func validateCertificateConfig(certConfig *CertificateConfig) error {
+
+	// switch, verifing that strings are not empty
+	switch "" {
+	case certConfig.Name:
+		return fmt.Errorf("Name cannot be empty")
+
+	case certConfig.OrganizationName:
+		return fmt.Errorf("OrganiationName cannot be empty")
+
+	default:
+		return nil
+
+	}
+}
+
+func populateDefaults(config *Configuration) {
 	for i := 0; i < len(config.Certificates); i++ {
 		certificateConfig := &config.Certificates[i]
 		if certificateConfig.ValidDays == 0 {

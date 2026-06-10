@@ -7,7 +7,7 @@ compile:
 	GOOS=windows GOARCH=amd64 go build -o bin/ssl-manager-windows-amd64.exe .
 
 build:
-	echo "Building for your computer"
+	echo "Building for your architecture"
 	go build -o bin/ssl-manager .
 
 install: build

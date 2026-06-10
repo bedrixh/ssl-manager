@@ -43,7 +43,6 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{certConfig.OrganizationName},
-			CommonName:   certConfig.CommonName,
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
@@ -69,13 +68,13 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 }
 
 func GenerateSSLCert(certConfig *CertificateConfig) error {
-	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		return err
 	}
-	pub := &priv.PublicKey
+	publicKey := &privateKey.PublicKey
 
-	err = SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), priv)
+	err = SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), privateKey)
 	if err != nil {
 		return err
 	}
@@ -91,7 +90,6 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{certConfig.OrganizationName},
-			CommonName:   certConfig.CommonName,
 		},
 		DNSNames:           certConfig.DNSNames,
 		IPAddresses:        certConfig.GetIPAdresses(),
@@ -112,10 +110,12 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 	if err != nil {
 		return err
 	}
-	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, pub, CAPrivateBytes)
+
+	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, publicKey, CAPrivateBytes)
 	if err != nil {
 		return err
 	}
+	
 	err = SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
 	if err != nil {
 		return err
@@ -124,21 +124,21 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 	return nil
 }
 
-func getPemBlockFromKey(priv *ecdsa.PrivateKey) (*pem.Block, error) {
-	b, err := x509.MarshalECPrivateKey(priv)
+func getPemBlockFromKey(privateKey *ecdsa.PrivateKey) (*pem.Block, error) {
+	bytes, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
 		return &pem.Block{}, err
 	}
-	return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}, nil
+	return &pem.Block{Type: "EC PRIVATE KEY", Bytes: bytes}, nil
 }
 
 func GetCertFromDisk(path string) (*x509.Certificate, error) {
-	data, err := os.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	certBlock, _ := pem.Decode(data)
+	certBlock, _ := pem.Decode(bytes)
 	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
 		return nil, fmt.Errorf("error decoding cert from disk")
 	}
