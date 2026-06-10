@@ -1,4 +1,4 @@
-module self-signed-ssl-manager
+module ssl-manager
 
 go 1.26.3
 

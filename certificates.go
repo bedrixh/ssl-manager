@@ -99,6 +99,7 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 		KeyUsage:           x509.KeyUsageDigitalSignature,
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		PublicKeyAlgorithm: x509.ECDSA,
+		IsCA: false,
 	}
 
 	CAPrivateBytes, err := GetKeyFromDisk(getPrivateKeyPath(Config.CACertificate.Path))

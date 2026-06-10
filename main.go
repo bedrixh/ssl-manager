@@ -6,6 +6,13 @@ import (
 	"os"
 )
 
+var (
+	// overridden by -ldflags
+	Version   = "dev"
+	Commit    = "unknown"
+	BuildTime = "unknown"
+)
+
 var Config *Configuration
 
 func main() {
@@ -13,7 +20,13 @@ func main() {
 	argGenCAPtr := flag.Bool("gen-ca", false, "Generates certification authority certificate and stores it on the disk")
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
+	argVersionPtr := flag.Bool("version", false, "Print version information and exit")
 	flag.Parse()
+
+	if *argVersionPtr {
+		fmt.Printf("ssl-manager %s (commit %s, built %s)\n", Version, Commit, BuildTime)
+		os.Exit(0)
+	}
 
 	var err error
 	Config, err = GetConfig(*argConfFilePtr)
@@ -31,7 +44,7 @@ func main() {
 		if (certExists == false) || (certExists == true && *argForcePtr == true) {
 			err = GenerateCACert(&Config.CACertificate)
 			if err != nil {
-			panic(fmt.Errorf("Error generating CA certificate (%s)",err))
+				panic(fmt.Errorf("Error generating CA certificate (%s)", err))
 			}
 		} else {
 			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
@@ -41,7 +54,7 @@ func main() {
 	if *argRenewCertsPtr == true {
 		err = renewCerts(*argForcePtr)
 		if err != nil {
-			panic(fmt.Errorf("Error renewing certificates (%s)",err))
+			panic(fmt.Errorf("Error renewing certificates (%s)", err))
 		}
 	}
 
