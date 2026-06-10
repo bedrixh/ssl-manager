@@ -1,20 +1,20 @@
 [CACertificate]
 Name = "RootCA"
-Path = "./CA/"
-OrganizationName = "bedrich kucera"
+Path = "./certs/CA/"
+OrganizationName = "bedrich kucera CA"
 Email = "bekucera@gmail.com"
 ValidDays = 79000
 RenewThresholdDays = 30
 
 [[Certificates]]
 Name = "service-api"
-Path = "./service-api"
-IPs = ["10.0.0.300"]
+Path = "./certs/service-api"
+IPs = ["10.0.0.B300"]
 DNSNames = ["api.example.com"]
 
 [[Certificates]]
 Name = "web-frontend"
-Path = "./web-frontend"
+Path = "./certs/web-frontend"
 IPs = []
 DNSNames = ["www.example.com", "example.com"]
 
@@ -23,4 +23,3 @@ ValidDays = 20
 RenewThresholdDays = 7
 OrganizationName = "bedrich kucera"
 Email = "bekucera@gmail.com"
-
