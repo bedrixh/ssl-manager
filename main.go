@@ -70,13 +70,13 @@ func renewCerts(force bool) error {
 		if certExists && force == false {
 			cert, err := GetCertFromDisk(getPublicCertPath(certificateConfig.Path))
 			if err != nil {
-				return err
+				return fmt.Errorf("Error while reading certificate %s from disk (%s)", certificateConfig.Name, err)
 			}
 			daysRemaining := GetValidDaysRemaining(cert)
 			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
 				err = GenerateSSLCert(certificateConfig)
 				if err != nil {
-					return err
+					return fmt.Errorf("Error renewing certificate %s (%s)", certificateConfig.Name, err)
 				} else {
 					fmt.Printf("\"%s\": renewed successfully\n", certificateConfig.Name)
 				}
@@ -90,7 +90,7 @@ func renewCerts(force bool) error {
 			}
 			err = GenerateSSLCert(certificateConfig)
 			if err != nil {
-				return err
+				return fmt.Errorf("Error renewing certificate %s (%s)", certificateConfig.Name, err)
 			} else {
 				fmt.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
 			}
