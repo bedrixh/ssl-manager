@@ -86,13 +86,19 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 
 	notBefore, notAfter := getValidFromAfter(certConfig)
 
+	ipAddresses, err := certConfig.GetIPAdresses()
+	if err != nil{
+		return err
+	}
+
+
 	certTemplate := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{certConfig.OrganizationName},
 		},
 		DNSNames:           certConfig.DNSNames,
-		IPAddresses:        certConfig.GetIPAdresses(),
+		IPAddresses:        ipAddresses,
 		NotBefore:          notBefore,
 		NotAfter:           notAfter,
 		ExtKeyUsage:        []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},

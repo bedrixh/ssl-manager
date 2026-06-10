@@ -28,12 +28,15 @@ type CertificateConfig struct {
 	RenewThresholdDays int
 }
 
-func (c *CertificateConfig) GetIPAdresses() []net.IP {
+func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
 	var ipAdresses []net.IP = make([]net.IP, len(c.IPs))
 	for i := 0; i < len(c.IPs); i++ {
 		ipAdresses[i] = net.ParseIP(c.IPs[i])
+		if ipAdresses[i] == nil {
+			return nil, fmt.Errorf("ip address number %d is not valid ip address",i)
+		}
 	}
-	return ipAdresses
+	return ipAdresses, nil
 }
 
 func GetConfig(path string) (*Configuration, error) {
@@ -112,24 +115,42 @@ func validateConfig(config *Configuration) error {
 			return fmt.Errorf("Certificate: %s (%s)", certConfig.Name, err)
 		}
 	}
+	err := validateCertificateConfig(&config.CACertificate)
+	if err != nil {
+		return fmt.Errorf("CA certificate configuration (%s)", err)
+	}
 
 	return nil
 }
 
 func validateCertificateConfig(certConfig *CertificateConfig) error {
 
-	// switch, verifing that strings are not empty
-	switch "" {
-	case certConfig.Name:
+	if _, err := certConfig.GetIPAdresses(); err != nil {
+		return err
+	}
+
+	switch {
+	case "" == certConfig.Name:
 		return fmt.Errorf("Name cannot be empty")
 
-	case certConfig.OrganizationName:
+	case "" == certConfig.Path:
+		return fmt.Errorf("Path cannot be empty")
+
+	case "" == certConfig.OrganizationName:
 		return fmt.Errorf("OrganiationName cannot be empty")
 
-	default:
-		return nil
+	case "" == certConfig.Email:
+		return fmt.Errorf("Email cannot be empty")
+
+	case 0 > certConfig.ValidDays:
+		return fmt.Errorf("Validity has to be bigger than 0 days")
+
+	case certConfig.ValidDays < certConfig.RenewThresholdDays:
+		return fmt.Errorf("Renew threshold has to be smaller or equal to validity")
 
 	}
+
+	return nil
 }
 
 func populateDefaults(config *Configuration) {
