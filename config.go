@@ -71,6 +71,7 @@ func GetConfig(path string) (*Configuration, error) {
 
 	populateDefaults(appConfig)
 
+	fmt.Println(appConfig)
 	err = validateConfig(appConfig)
 	if err != nil {
 		return nil, fmt.Errorf("Config validation error (%s)", err)
