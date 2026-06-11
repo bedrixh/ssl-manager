@@ -1,0 +1,32 @@
+CACertificate:
+  Name: RootCA
+  Path: ./certs/CA/
+  OrganizationName: john doe CA
+  Email: johndoe@example.com
+  ValidDays: 79000
+  RenewThresholdDays: 30
+
+Certificates:
+  - Name: service-api
+    Path: ./certs/service-api
+    OrganizationName: john doe
+    Email: johndoe@example.com
+    IPs:
+      - 10.0.0.200
+    DNSNames:
+      - api.example.com
+    ValidDays: 50
+    RenewThresholdDays: 15
+
+  - Name: web-frontend
+    Path: ./certs/web-frontend
+    DNSNames:
+      - www.example.com
+      - example.com
+
+CertificatesDefaults:
+  ValidDays: 20
+  RenewThresholdDays: 7
+  OrganizationName: john doe
+  Email: johndoe@example.com
+
