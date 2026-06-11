@@ -3,7 +3,7 @@
 **ssl‑manager** – a small command‑line utility for creating and renewing SSL certificates.
 
 ## Features
-- Reads configuration from json, toml, or yaml (examples are in root directory.  
+- Reads configuration from json, toml, or yaml (examples are in root directory).  
 - Generates self‑signed certificates and renews existing ones.
 
 ## Building
