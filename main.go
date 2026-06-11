@@ -16,7 +16,7 @@ var (
 var Config *Configuration
 
 func main() {
-	argConfFilePtr := flag.String("config", "./conf.toml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
+	argConfFilePtr := flag.String("config", "/etc/ssl-manager/conf.toml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
 	argGenCAPtr := flag.Bool("gen-ca", false, "Generates certification authority certificate and stores it on the disk")
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
@@ -66,8 +66,9 @@ func main() {
 func renewCerts(force bool) error {
 	for i := 0; i < len(Config.Certificates); i++ {
 		certificateConfig := &Config.Certificates[i]
+
 		certExists := getCertificateExists(certificateConfig)
-		if certExists && force == false {
+		if force == false && certExists == true {
 			cert, err := GetCertFromDisk(getPublicCertPath(certificateConfig.Path))
 			if err != nil {
 				return fmt.Errorf("Error while reading certificate %s from disk (%s)", certificateConfig.Name, err)
@@ -83,6 +84,8 @@ func renewCerts(force bool) error {
 			} else {
 				fmt.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(daysRemaining))
 			}
+
+			continue
 		} else {
 			err := os.MkdirAll(certificateConfig.Path, 0755)
 			if err != nil && err != os.ErrExist {
@@ -94,7 +97,10 @@ func renewCerts(force bool) error {
 			} else {
 				fmt.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
 			}
+
+			continue
 		}
+
 	}
 	return nil
 }
