@@ -115,8 +115,8 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 
 	CACert, err := GetCertFromDisk(getPublicCertPath(Config.CACertificate.Path))
 	if err != nil {
-		return err
-	}
+		return fmt.Errorf("Error reading CA certificate from disk (%s)",err)
+}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, publicKey, CAPrivateBytes)
 	if err != nil {
