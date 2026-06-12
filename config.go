@@ -8,24 +8,24 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"go.yaml.in/yaml/v4"
+	"gopkg.in/yaml.v3"
 )
 
 type Configuration struct {
-	CACertificate        CertificateConfig
-	Certificates         []CertificateConfig
-	CertificatesDefaults CertificateConfig
+	CACertificate        CertificateConfig   `yaml:"CACertificate"`
+	Certificates         []CertificateConfig `yaml:"Certificates"`
+	CertificatesDefaults CertificateConfig   `yaml:"CertificatesDefaults"`
 }
 
 type CertificateConfig struct {
-	Name               string
-	Path               string
-	OrganizationName   string
-	Email              string
-	IPs                []string
-	DNSNames           []string
-	ValidDays          int
-	RenewThresholdDays int
+	Name               string   `yaml:"Name"`
+	Path               string   `yaml:"Path"`
+	OrganizationName   string   `yaml:"OrganizationName"`
+	Email              string   `yaml:"Email"`
+	IPs                []string `yaml:"IPs"`
+	DNSNames           []string `yaml:"DNSNames"`
+	ValidDays          int      `yaml:"ValidDays"`
+	RenewThresholdDays int      `yaml:"RenewThresholdDays"`
 }
 
 func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
@@ -33,7 +33,7 @@ func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
 	for i := 0; i < len(c.IPs); i++ {
 		ipAdresses[i] = net.ParseIP(c.IPs[i])
 		if ipAdresses[i] == nil {
-			return nil, fmt.Errorf("ip address number %d is not valid ip address",i)
+			return nil, fmt.Errorf("ip address number %d is not valid ip address", i)
 		}
 	}
 	return ipAdresses, nil
@@ -71,7 +71,6 @@ func GetConfig(path string) (*Configuration, error) {
 
 	populateDefaults(appConfig)
 
-	fmt.Println(appConfig)
 	err = validateConfig(appConfig)
 	if err != nil {
 		return nil, fmt.Errorf("Config validation error (%s)", err)
