@@ -12,20 +12,20 @@ import (
 )
 
 type Configuration struct {
-	CACertificate        CertificateConfig   `yaml:"CACertificate"`
-	Certificates         []CertificateConfig `yaml:"Certificates"`
-	CertificatesDefaults CertificateConfig   `yaml:"CertificatesDefaults"`
+	CACertificate        CertificateConfig   `yaml:"CACertificate" json:"CACertificate" toml:"CACertificate"`
+	Certificates         []CertificateConfig `yaml:"Certificates" json:"Certificates" toml:"Certificates"`
+	CertificatesDefaults CertificateConfig   `yaml:"CertificatesDefaults" json:"CertificatesDefaults" toml:"CertificatesDefaults"`
 }
 
 type CertificateConfig struct {
-	Name               string   `yaml:"Name"`
-	Path               string   `yaml:"Path"`
-	OrganizationName   string   `yaml:"OrganizationName"`
-	Email              string   `yaml:"Email"`
-	IPs                []string `yaml:"IPs"`
-	DNSNames           []string `yaml:"DNSNames"`
-	ValidDays          int      `yaml:"ValidDays"`
-	RenewThresholdDays int      `yaml:"RenewThresholdDays"`
+	Name               string   `yaml:"Name" json:"Name" toml:"Name"`
+	Path               string   `yaml:"Path" json:"Path" toml:"Path"`
+	OrganizationName   string   `yaml:"OrganizationName" json:"OrganizationName" toml:"OrganizationName"`
+	Email              string   `yaml:"Email" json:"Email" toml:"Email"`
+	IPs                []string `yaml:"IPs" json:"IPs" toml:"IPs"`
+	DNSNames           []string `yaml:"DNSNames" json:"DNSNames" toml:"DNSNames"`
+	ValidDays          int      `yaml:"ValidDays" json:"ValidDays" toml:"ValidDays"`
+	RenewThresholdDays int      `yaml:"RenewThresholdDays" json:"RenewThresholdDays" toml:"RenewThresholdDays"`
 }
 
 func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
