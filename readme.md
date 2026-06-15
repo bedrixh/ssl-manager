@@ -11,7 +11,7 @@ Go is required to build the project
 Clone the repo and build
 
 ```bash
-git clone https://github.com/yourusername/ssl-manager.git
+git clone https://github.com/bedrixh/ssl-manager.git
 cd ssl-manager
 make build          # builds for your current OS/arch
 # or
