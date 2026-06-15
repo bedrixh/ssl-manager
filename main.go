@@ -17,7 +17,7 @@ var (
 var Config *Configuration
 
 func main() {
-	argConfFilePtr := flag.String("config", "/etc/ssl-manager/conf.toml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
+	argConfFilePtr := flag.String("config", "/etc/ssl-manager/conf.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
 	argGenCAPtr := flag.Bool("gen-ca", false, "Generates certification authority certificate and stores it on the disk")
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
