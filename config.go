@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -12,6 +13,7 @@ import (
 )
 
 type Configuration struct {
+	Daemon               DaemonConfig        `yaml:"Daemon" json:"Daemon" toml:"Daemon"`
 	CACertificate        CertificateConfig   `yaml:"CACertificate" json:"CACertificate" toml:"CACertificate"`
 	Certificates         []CertificateConfig `yaml:"Certificates" json:"Certificates" toml:"Certificates"`
 	CertificatesDefaults CertificateConfig   `yaml:"CertificatesDefaults" json:"CertificatesDefaults" toml:"CertificatesDefaults"`
@@ -28,6 +30,10 @@ type CertificateConfig struct {
 	RenewThresholdDays int      `yaml:"RenewThresholdDays" json:"RenewThresholdDays" toml:"RenewThresholdDays"`
 }
 
+type DaemonConfig struct {
+	RenewIntervalDays int `yaml:"RenewIntervalDays" json:"RenewIntervalDays" toml:"RenewIntervalDays"`
+}
+
 func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
 	var ipAdresses []net.IP = make([]net.IP, len(c.IPs))
 	for i := 0; i < len(c.IPs); i++ {
@@ -38,6 +44,24 @@ func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
 	}
 	return ipAdresses, nil
 }
+
+func (c *CertificateConfig) GetCertPath() string {
+	return filepath.Join(c.Path, "cert.pem")
+}
+func (c *CertificateConfig) GetKeyPath() string {
+	return filepath.Join(c.Path, "key.pem")
+}
+
+func (c *CertificateConfig) CertificateExists() bool {
+	fileInfo, err := os.Stat(c.GetCertPath())
+	if err != nil {
+		return false
+	}
+	return fileInfo.IsDir() == false
+}
+
+// end of code for working with certificates, i promise
+// -----------------------------------------------------------------
 
 func GetConfig(path string) (*Configuration, error) {
 	configBytes, err := os.ReadFile(path)
@@ -118,6 +142,10 @@ func validateConfig(config *Configuration) error {
 	err := validateCertificateConfig(&config.CACertificate)
 	if err != nil {
 		return fmt.Errorf("CA certificate configuration (%s)", err)
+	}
+
+	if config.Daemon.RenewIntervalDays == 0 {
+		return fmt.Errorf("Daemon renew interval cannot be empty")
 	}
 
 	return nil

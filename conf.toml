@@ -31,4 +31,5 @@ RenewThresholdDays = 7
 OrganizationName = "john doe"
 Email = "johndoe@example.com"
 
-
+[Daemon]
+RenewIntervalDays = 5

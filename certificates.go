@@ -10,16 +10,8 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"path/filepath"
 	"time"
 )
-
-func getPrivateKeyPath(dirPath string) string {
-	return filepath.Join(dirPath, "key.pem")
-}
-func getPublicCertPath(dirPath string) string {
-	return filepath.Join(dirPath, "cert.pem")
-}
 
 func GenerateCACert(certConfig *CertificateConfig) error {
 	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
@@ -27,7 +19,7 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		return err
 	}
 
-	err = SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), priv)
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), priv)
 	if err != nil {
 		return err
 	}
@@ -59,7 +51,7 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		return err
 	}
 
-	err = SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
+	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes)
 	if err != nil {
 		return err
 	}
@@ -74,7 +66,7 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 	}
 	publicKey := &privateKey.PublicKey
 
-	err = SaveKeyToDisk(getPrivateKeyPath(certConfig.Path), privateKey)
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey)
 	if err != nil {
 		return err
 	}
@@ -87,10 +79,9 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 	notBefore, notAfter := getValidFromAfter(certConfig)
 
 	ipAddresses, err := certConfig.GetIPAdresses()
-	if err != nil{
+	if err != nil {
 		return err
 	}
-
 
 	certTemplate := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -105,25 +96,25 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 		KeyUsage:           x509.KeyUsageDigitalSignature,
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		PublicKeyAlgorithm: x509.ECDSA,
-		IsCA: false,
+		IsCA:               false,
 	}
 
-	CAPrivateBytes, err := GetKeyFromDisk(getPrivateKeyPath(Config.CACertificate.Path))
+	CAPrivateBytes, err := GetKeyFromDisk(Config.CACertificate.GetKeyPath())
 	if err != nil {
 		return err
 	}
 
-	CACert, err := GetCertFromDisk(getPublicCertPath(Config.CACertificate.Path))
+	CACert, err := GetCertFromDisk(Config.CACertificate.GetCertPath())
 	if err != nil {
-		return fmt.Errorf("Error reading CA certificate from disk (%s)",err)
-}
+		return fmt.Errorf("Error reading CA certificate from disk (%s)", err)
+	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, publicKey, CAPrivateBytes)
 	if err != nil {
 		return err
 	}
-	
-	err = SaveCertToDisk(getPublicCertPath(certConfig.Path), certBytes)
+
+	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes)
 	if err != nil {
 		return err
 	}
@@ -205,21 +196,18 @@ func SaveKeyToDisk(path string, privateKey *ecdsa.PrivateKey) error {
 	return nil
 }
 
-func GetValidDaysRemaining(cert *x509.Certificate) int64 {
+func GetValidDaysRemaining(certConfig *CertificateConfig) (int64, error) {
 	// 86400 is 1 day in seconds
-	return (cert.NotAfter.Unix() - time.Now().Unix()) / 86400
+	cert, err := GetCertFromDisk(certConfig.GetCertPath())
+	if err != nil {
+		return 0, fmt.Errorf("Error reading certificate from disk (%s)", err)
+	}
+
+	return (cert.NotAfter.Unix() - time.Now().Unix()) / 86400, nil
 }
 
 func getValidFromAfter(certConfig *CertificateConfig) (time.Time, time.Time) {
 	validFrom := time.Now()
 	validTo := validFrom.Add(time.Duration(certConfig.ValidDays) * 24 * time.Hour)
 	return validFrom, validTo
-}
-
-func getCertificateExists(certConfig *CertificateConfig) bool {
-	fileInfo, err := os.Stat(getPublicCertPath(certConfig.Path))
-	if err != nil {
-		return false
-	}
-	return fileInfo.IsDir() == false
 }
