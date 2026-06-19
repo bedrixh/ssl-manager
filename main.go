@@ -55,7 +55,7 @@ func main() {
 		if (certExists == false) || (certExists == true && *argForcePtr == true) {
 			err = GenerateCACert(&Config.CACertificate)
 			if err != nil {
-				panic(fmt.Errorf("Error generating CA certificate (%s)", err))
+				panic(fmt.Errorf("error generating CA certificate: %s", err))
 			}
 		} else {
 			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
@@ -65,7 +65,7 @@ func main() {
 	if *argRenewCertsPtr == true {
 		err = renewCerts(*argForcePtr)
 		if err != nil {
-			panic(fmt.Errorf("Error renewing certificates (%s)", err))
+			panic(fmt.Errorf("error renewing certificates: %s", err))
 		}
 	}
 
@@ -84,7 +84,7 @@ func renewCerts(force bool) error {
 		if force == false && certExists == true {
 			daysRemaining, err := GetValidDaysRemaining(certificateConfig)
 			if err != nil {
-				return fmt.Errorf("Error geting certificate %s validity (%s)", certificateConfig.Name, err)
+				return fmt.Errorf("error geting certificate %s validity: %s", certificateConfig.Name, err)
 			}
 
 			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
@@ -92,7 +92,7 @@ func renewCerts(force bool) error {
 				//renewing certificate if it is the time
 				err = GenerateSSLCert(certificateConfig)
 				if err != nil {
-					return fmt.Errorf("Error renewing certificate %s (%s)", certificateConfig.Name, err)
+					return fmt.Errorf("Error renewing certificate %s: %s", certificateConfig.Name, err)
 				} else {
 					fmt.Printf("%s: renewed successfully\n", certificateConfig.Name)
 				}
@@ -112,7 +112,7 @@ func renewCerts(force bool) error {
 			//renewing certificate even if it exist and it is not his time yet
 			err = GenerateSSLCert(certificateConfig)
 			if err != nil {
-				return fmt.Errorf("Error renewing certificate %s (%s)", certificateConfig.Name, err)
+				return fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 
 			} else {
 				fmt.Printf("\"%s\": generated successfully\n", certificateConfig.Name)

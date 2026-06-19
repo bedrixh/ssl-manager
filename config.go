@@ -97,7 +97,7 @@ func GetConfig(path string) (*Configuration, error) {
 
 	err = validateConfig(appConfig)
 	if err != nil {
-		return nil, fmt.Errorf("Config validation error (%s)", err)
+		return nil, fmt.Errorf("config validation error: %s", err)
 	}
 
 	return appConfig, nil
@@ -141,11 +141,11 @@ func validateConfig(config *Configuration) error {
 	}
 	err := validateCertificateConfig(&config.CACertificate)
 	if err != nil {
-		return fmt.Errorf("CA certificate configuration (%s)", err)
+		return fmt.Errorf("CA certificate configuration: %s", err)
 	}
 
 	if config.Daemon.RenewIntervalDays == 0 {
-		return fmt.Errorf("Daemon renew interval cannot be empty")
+		return fmt.Errorf("daemon renew interval cannot be empty")
 	}
 
 	return nil
@@ -174,7 +174,7 @@ func validateCertificateConfig(certConfig *CertificateConfig) error {
 		return fmt.Errorf("Validity has to be bigger than 0 days")
 
 	case certConfig.ValidDays < certConfig.RenewThresholdDays:
-		return fmt.Errorf("Renew threshold has to be smaller or equal to validity")
+		return fmt.Errorf("renew threshold has to be smaller or equal to validity")
 
 	}
 

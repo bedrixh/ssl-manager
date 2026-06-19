@@ -106,7 +106,7 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 
 	CACert, err := GetCertFromDisk(Config.CACertificate.GetCertPath())
 	if err != nil {
-		return fmt.Errorf("Error reading CA certificate from disk (%s)", err)
+		return fmt.Errorf("error reading CA certificate from disk: %s", err)
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, publicKey, CAPrivateBytes)
@@ -156,7 +156,7 @@ func GetKeyFromDisk(path string) (*ecdsa.PrivateKey, error) {
 	}
 	privateBlock, _ := pem.Decode(privatePEMBytes)
 	if privateBlock == nil || privateBlock.Type != "EC PRIVATE KEY" {
-		return nil, fmt.Errorf("error decoding key from disk (%s)", path)
+		return nil, fmt.Errorf("error decoding key from disk: %s", path)
 	}
 
 	privateKey, err := x509.ParseECPrivateKey(privateBlock.Bytes)
@@ -200,7 +200,7 @@ func GetValidDaysRemaining(certConfig *CertificateConfig) (int64, error) {
 	// 86400 is 1 day in seconds
 	cert, err := GetCertFromDisk(certConfig.GetCertPath())
 	if err != nil {
-		return 0, fmt.Errorf("Error reading certificate from disk (%s)", err)
+		return 0, fmt.Errorf("error reading certificate from disk: %s", err)
 	}
 
 	return (cert.NotAfter.Unix() - time.Now().Unix()) / 86400, nil
