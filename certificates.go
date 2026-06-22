@@ -19,11 +19,6 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		return err
 	}
 
-	err = SaveKeyToDisk(certConfig.GetKeyPath(), priv)
-	if err != nil {
-		return err
-	}
-
 	notBefore, notAfter := getValidFromAfter(certConfig)
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
@@ -51,6 +46,11 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 		return err
 	}
 
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), priv)
+	if err != nil {
+		return err
+	}
+
 	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes)
 	if err != nil {
 		return err
@@ -65,11 +65,6 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 		return err
 	}
 	publicKey := &privateKey.PublicKey
-
-	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey)
-	if err != nil {
-		return err
-	}
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
@@ -110,6 +105,11 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, CACert, publicKey, CAPrivateBytes)
+	if err != nil {
+		return err
+	}
+
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey)
 	if err != nil {
 		return err
 	}
