@@ -35,7 +35,7 @@ type DaemonConfig struct {
 }
 
 func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
-	var ipAdresses []net.IP = make([]net.IP, len(c.IPs))
+	var ipAdresses = make([]net.IP, len(c.IPs))
 	for i := 0; i < len(c.IPs); i++ {
 		ipAdresses[i] = net.ParseIP(c.IPs[i])
 		if ipAdresses[i] == nil {
@@ -57,11 +57,8 @@ func (c *CertificateConfig) CertificateExists() bool {
 	if err != nil {
 		return false
 	}
-	return fileInfo.IsDir() == false
+	return !fileInfo.IsDir()
 }
-
-// end of code for working with certificates, i promise
-// -----------------------------------------------------------------
 
 func GetConfig(path string) (*Configuration, error) {
 	configBytes, err := os.ReadFile(path)
@@ -136,7 +133,7 @@ func validateConfig(config *Configuration) error {
 		certConfig := &config.Certificates[i]
 		err := validateCertificateConfig(certConfig)
 		if err != nil {
-			return fmt.Errorf("Certificate: %s (%s)", certConfig.Name, err)
+			return fmt.Errorf("certificate: %s (%s)", certConfig.Name, err)
 		}
 	}
 	err := validateCertificateConfig(&config.CACertificate)
@@ -158,16 +155,16 @@ func validateCertificateConfig(certConfig *CertificateConfig) error {
 	}
 
 	switch {
-	case "" == certConfig.Name:
+	case certConfig.Name == "":
 		return fmt.Errorf("Name cannot be empty")
 
-	case "" == certConfig.Path:
+	case certConfig.Path == "":
 		return fmt.Errorf("Path cannot be empty")
 
-	case "" == certConfig.OrganizationName:
+	case certConfig.OrganizationName == "":
 		return fmt.Errorf("OrganiationName cannot be empty")
 
-	case "" == certConfig.Email:
+	case certConfig.Email == "":
 		return fmt.Errorf("Email cannot be empty")
 
 	case 0 > certConfig.ValidDays:

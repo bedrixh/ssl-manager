@@ -171,12 +171,13 @@ func SaveCertToDisk(path string, certBytes []byte) error {
 	if err != nil {
 		return err
 	}
+	defer certOut.Close()
+
 	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
 	if err != nil {
 		return err
 	}
 
-	defer certOut.Close()
 	return nil
 }
 
@@ -185,14 +186,16 @@ func SaveKeyToDisk(path string, privateKey *ecdsa.PrivateKey) error {
 	if err != nil {
 		return err
 	}
+	defer privateKeyFile.Close()
 
 	privateKeyPemBlock, err := getPemBlockFromKey(privateKey)
 	if err != nil {
 		return err
 	}
-	pem.Encode(privateKeyFile, privateKeyPemBlock)
-	defer privateKeyFile.Close()
-
+	err = pem.Encode(privateKeyFile, privateKeyPemBlock)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

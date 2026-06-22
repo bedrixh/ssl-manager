@@ -37,7 +37,7 @@ func main() {
 		panic(err)
 	}
 
-	if *argDaemonPtr == true {
+	if *argDaemonPtr {
 		err = runDaemon()
 		if err != nil {
 			panic(err)
@@ -46,13 +46,13 @@ func main() {
 		}
 	}
 
-	if *argGenCAPtr == true {
+	if *argGenCAPtr {
 		err := os.MkdirAll(Config.CACertificate.Path, 0750)
 		if err != nil {
 			panic(err)
 		}
 		certExists := Config.CACertificate.CertificateExists()
-		if (certExists == false) || (certExists == true && *argForcePtr == true) {
+		if (!certExists) || (certExists && *argForcePtr) {
 			err = GenerateCACert(&Config.CACertificate)
 			if err != nil {
 				panic(fmt.Errorf("error generating CA certificate: %s", err))
@@ -62,14 +62,14 @@ func main() {
 		}
 	}
 
-	if *argRenewCertsPtr == true {
+	if *argRenewCertsPtr {
 		err = renewCerts(*argForcePtr)
 		if err != nil {
 			panic(fmt.Errorf("error renewing certificates: %s", err))
 		}
 	}
 
-	if *argGenCAPtr == false && *argRenewCertsPtr == false {
+	if !*argGenCAPtr && !*argRenewCertsPtr {
 		flag.PrintDefaults()
 	}
 }
@@ -81,7 +81,7 @@ func renewCerts(force bool) error {
 		certificateConfig := &Config.Certificates[i]
 
 		certExists := certificateConfig.CertificateExists()
-		if force == false && certExists == true {
+		if !force && certExists {
 			daysRemaining, err := GetValidDaysRemaining(certificateConfig)
 			if err != nil {
 				return fmt.Errorf("error geting certificate %s validity: %s", certificateConfig.Name, err)
@@ -129,7 +129,7 @@ func runDaemon() error {
 	ticker := time.NewTicker(time.Duration(Config.Daemon.RenewIntervalDays) * 24 * time.Hour)
 	defer ticker.Stop()
 
-	for true {
+	for {
 		err := renewCerts(false)
 		if err != nil {
 			return err
@@ -138,5 +138,4 @@ func runDaemon() error {
 		<-ticker.C
 	}
 
-	return nil
 }
