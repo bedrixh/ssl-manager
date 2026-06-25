@@ -10,7 +10,7 @@ compile:
 
 build:
 	@echo "Building for your architecture"
-	go build -o bin/ssl-manager .
+	go build $(GO_LDFLAGS) -o bin/ssl-manager .
 
 install: build
 	@echo Installing builded package
