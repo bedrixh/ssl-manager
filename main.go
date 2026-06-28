@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"ssl-manager/certificates"
+	"ssl-manager/config"
 )
 
 var (
@@ -13,8 +16,6 @@ var (
 	Commit    = "unknown"
 	BuildTime = "unknown"
 )
-
-var Config *Configuration
 
 func main() {
 	argConfFilePtr := flag.String("config", "/etc/ssl-manager/conf.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
@@ -31,9 +32,13 @@ func main() {
 	}
 
 	var err error
-	Config, err = GetConfig(*argConfFilePtr)
+	err = config.LoadAppConfig(*argConfFilePtr)
 	if err != nil {
 		fmt.Println("Failed to load config")
+		panic(err)
+	}
+	appConfig, err := config.GetConfig()
+	if err != nil {
 		panic(err)
 	}
 
@@ -47,13 +52,13 @@ func main() {
 	}
 
 	if *argGenCAPtr {
-		err := os.MkdirAll(Config.CACertificate.Path, 0750)
+		err := os.MkdirAll(appConfig.CACertificate.Path, 0750)
 		if err != nil {
 			panic(err)
 		}
-		certExists := Config.CACertificate.CertificateExists()
+		certExists := appConfig.CACertificate.CertificateExists()
 		if (!certExists) || (certExists && *argForcePtr) {
-			err = GenerateCACert(&Config.CACertificate)
+			err = certificates.GenerateCACert(&appConfig.CACertificate)
 			if err != nil {
 				panic(fmt.Errorf("error generating CA certificate: %s", err))
 			}
@@ -76,13 +81,17 @@ func main() {
 
 func renewCerts(force bool) error {
 	//pretty confusing junk i would like to do something about it
+	appConfig, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
 
-	for i := 0; i < len(Config.Certificates); i++ {
-		certificateConfig := &Config.Certificates[i]
+	for i := 0; i < len(appConfig.Certificates); i++ {
+		certificateConfig := &appConfig.Certificates[i]
 
 		certExists := certificateConfig.CertificateExists()
 		if !force && certExists {
-			daysRemaining, err := GetValidDaysRemaining(certificateConfig)
+			daysRemaining, err := certificates.GetValidDaysRemaining(certificateConfig)
 			if err != nil {
 				return fmt.Errorf("error geting certificate %s validity: %s", certificateConfig.Name, err)
 			}
@@ -90,9 +99,9 @@ func renewCerts(force bool) error {
 			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
 
 				//renewing certificate if it is the time
-				err = GenerateSSLCert(certificateConfig)
+				err = certificates.GenerateSSLCert(certificateConfig, &appConfig.CACertificate)
 				if err != nil {
-					return fmt.Errorf("Error renewing certificate %s: %s", certificateConfig.Name, err)
+					return fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 				} else {
 					fmt.Printf("%s: renewed successfully\n", certificateConfig.Name)
 				}
@@ -110,7 +119,7 @@ func renewCerts(force bool) error {
 			}
 
 			//renewing certificate even if it exist and it is not his time yet
-			err = GenerateSSLCert(certificateConfig)
+			err = certificates.GenerateSSLCert(certificateConfig, &appConfig.CACertificate)
 			if err != nil {
 				return fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 
@@ -126,7 +135,12 @@ func renewCerts(force bool) error {
 }
 
 func runDaemon() error {
-	ticker := time.NewTicker(time.Duration(Config.Daemon.RenewIntervalDays) * 24 * time.Hour)
+	appConfig, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	ticker := time.NewTicker(time.Duration(appConfig.Daemon.RenewIntervalDays) * 24 * time.Hour)
 	defer ticker.Stop()
 
 	for {

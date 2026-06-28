@@ -1,4 +1,4 @@
-package main
+package certificates
 
 import (
 	"crypto/ecdsa"
@@ -11,9 +11,11 @@ import (
 	"math/big"
 	"os"
 	"time"
+
+	"ssl-manager/config"
 )
 
-func GenerateCACert(certConfig *CertificateConfig) error {
+func GenerateCACert(certConfig *config.CertificateConfig) error {
 	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		return err
@@ -59,7 +61,7 @@ func GenerateCACert(certConfig *CertificateConfig) error {
 	return nil
 }
 
-func GenerateSSLCert(certConfig *CertificateConfig) error {
+func GenerateSSLCert(certConfig *config.CertificateConfig, caCertConfig *config.CertificateConfig) error {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		return err
@@ -94,12 +96,12 @@ func GenerateSSLCert(certConfig *CertificateConfig) error {
 		IsCA:               false,
 	}
 
-	CAPrivateBytes, err := GetKeyFromDisk(Config.CACertificate.GetKeyPath())
+	CAPrivateBytes, err := GetKeyFromDisk(caCertConfig.GetKeyPath())
 	if err != nil {
 		return err
 	}
 
-	CACert, err := GetCertFromDisk(Config.CACertificate.GetCertPath())
+	CACert, err := GetCertFromDisk(caCertConfig.GetCertPath())
 	if err != nil {
 		return fmt.Errorf("error reading CA certificate from disk: %s", err)
 	}
@@ -199,7 +201,7 @@ func SaveKeyToDisk(path string, privateKey *ecdsa.PrivateKey) error {
 	return nil
 }
 
-func GetValidDaysRemaining(certConfig *CertificateConfig) (int64, error) {
+func GetValidDaysRemaining(certConfig *config.CertificateConfig) (int64, error) {
 	// 86400 is 1 day in seconds
 	cert, err := GetCertFromDisk(certConfig.GetCertPath())
 	if err != nil {
@@ -209,7 +211,7 @@ func GetValidDaysRemaining(certConfig *CertificateConfig) (int64, error) {
 	return (cert.NotAfter.Unix() - time.Now().Unix()) / 86400, nil
 }
 
-func getValidFromAfter(certConfig *CertificateConfig) (time.Time, time.Time) {
+func getValidFromAfter(certConfig *config.CertificateConfig) (time.Time, time.Time) {
 	validFrom := time.Now()
 	validTo := validFrom.Add(time.Duration(certConfig.ValidDays) * 24 * time.Hour)
 	return validFrom, validTo

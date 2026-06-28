@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -11,6 +11,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"gopkg.in/yaml.v3"
 )
+
+var appConfig *Configuration = nil
 
 type Configuration struct {
 	Daemon               DaemonConfig        `yaml:"Daemon" json:"Daemon" toml:"Daemon"`
@@ -60,26 +62,33 @@ func (c *CertificateConfig) CertificateExists() bool {
 	return !fileInfo.IsDir()
 }
 
-func GetConfig(path string) (*Configuration, error) {
+func GetConfig() (*Configuration, error) {
+	if appConfig == nil {
+		return nil, fmt.Errorf("config is empty")
+	}
+	return appConfig, nil
+}
+
+func LoadAppConfig(path string) error {
 	configBytes, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	appConfig := &Configuration{}
+	config := &Configuration{}
 
 	switch {
 	case strings.HasSuffix(path, ".json"):
 		{
-			appConfig, err = loadJsonConfig(configBytes)
+			config, err = loadJsonConfig(configBytes)
 		}
 	case strings.HasSuffix(path, ".toml"):
 		{
-			appConfig, err = loadTomlConfig(configBytes)
+			config, err = loadTomlConfig(configBytes)
 		}
 	case strings.HasSuffix(path, ".yaml"):
 		{
-			appConfig, err = loadYamlConfig(configBytes)
+			config, err = loadYamlConfig(configBytes)
 		}
 	default:
 		{
@@ -87,17 +96,19 @@ func GetConfig(path string) (*Configuration, error) {
 		}
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	populateDefaults(appConfig)
+	populateDefaults(config)
 
-	err = validateConfig(appConfig)
+	err = validateConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("config validation error: %s", err)
+		return fmt.Errorf("config validation error: %s", err)
 	}
 
-	return appConfig, nil
+	appConfig = config
+
+	return nil
 }
 
 func loadJsonConfig(jsonBytes []byte) (*Configuration, error) {
