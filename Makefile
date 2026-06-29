@@ -1,4 +1,4 @@
-GO_LDFLAGS := -ldflags "-X main.Version=$$(git describe --tags) -X main.Commit=$$(git rev-parse --short HEAD) -X main.BuildTime=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+GO_LDFLAGS := -ldflags "-X main.Version=$$(git describe --tags --exclude release) -X main.Commit=$$(git rev-parse --short HEAD) -X main.BuildTime=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 compile:
 	@echo "Compiling for every OS and Platform"
