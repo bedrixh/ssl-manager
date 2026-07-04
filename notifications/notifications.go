@@ -13,7 +13,7 @@ import (
 
 func SendNotification(config.NotificationWebhook, certRenewError error){
 
-callWebhook("https://gotify.bekucera.uk/message?token=A34AtJnsFC3aNZR", map[string]string{"title": "ssl-manager", "message": "%message%"})
+callWebhook("https://gotify.bekucera.uk/message?token=A34AtJnsFC3aNZR", map[string]string{"title": "ssl-manager %status%", "message": "%message%"})
 }
 
 func callWebhook(url string, postData map[string]string) error {
@@ -35,8 +35,17 @@ func callWebhook(url string, postData map[string]string) error {
 	return nil
 }
 
-func replaceMapVariables(mapToReplace *map[string]string){
+func replaceMapVariables(mapToReplace *map[string]string, certRenewError error){
 	for k := range(mapToReplace){
-		mapToReplace[k] = strings.ReplaceAll(*mapToReplace[k], "%message%")
+		var message string
+		var status string
+		if certRenewError == nil {
+			message = "Certificates were renewed successfully"
+			status = "success"
+		}else {
+			message = certRenewError.Error()
+			status = "failed"
+		}
+		mapToReplace[k] = strings.ReplaceAll(*mapToReplace[k], "%message%", message)	
 	}	
 }
