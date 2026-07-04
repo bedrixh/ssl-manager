@@ -7,13 +7,27 @@ import (
 	"net/http"
 	"ssl-manager/config"
 	"strings"
-
-	"golang.org/x/text/message"
 )
 
-func SendNotification(config.NotificationWebhook, certRenewError error){
+func SendCertRenewNotifications(webhooks []config.NotificationWebhook, renewedCerts []string, certRenewError error) error {
+	for _, v := range webhooks {
+		if (certRenewError == nil && v.NotifySuccess) || (certRenewError != nil && v.NotifyFail) {
+			err := SendCertRenewNotification(&v, renewedCerts, certRenewError)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 
-callWebhook("https://gotify.bekucera.uk/message?token=A34AtJnsFC3aNZR", map[string]string{"title": "ssl-manager %status%", "message": "%message%"})
+}
+
+func SendCertRenewNotification(webhook *config.NotificationWebhook, renewedCerts []string, certRenewError error) error {
+	err := callWebhook(webhook.Url, replaceMapVariables(webhook.PostData, renewedCerts, certRenewError))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func callWebhook(url string, postData map[string]string) error {
@@ -29,23 +43,29 @@ func callWebhook(url string, postData map[string]string) error {
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("sending notification fialed, status code %d, response: %s", resp.StatusCode, resp.Body)
+		return fmt.Errorf("sending http request fialed, status code %d, response: %s", resp.StatusCode, resp.Body)
 	}
 
 	return nil
 }
 
-func replaceMapVariables(mapToReplace *map[string]string, certRenewError error){
-	for k := range(mapToReplace){
+func replaceMapVariables(mapToReplace map[string]string, renewedCerts []string, certRenewError error) map[string]string {
+	mapToReplaceCopy := make(map[string]string)
+	for k := range mapToReplace {
 		var message string
 		var status string
 		if certRenewError == nil {
-			message = "Certificates were renewed successfully"
+			message = fmt.Sprintf("Certificates were renewed successfully (%s)", strings.Join(renewedCerts, ", "))
 			status = "success"
-		}else {
+		} else {
 			message = certRenewError.Error()
 			status = "failed"
 		}
-		mapToReplace[k] = strings.ReplaceAll(*mapToReplace[k], "%message%", message)	
-	}	
+		mapToReplaceCopy[k] = mapToReplace[k]
+		mapToReplaceCopy[k] = strings.ReplaceAll(mapToReplaceCopy[k], "%message%", message)
+		mapToReplaceCopy[k] = strings.ReplaceAll(mapToReplaceCopy[k], "%status%", status)
+
+	}
+
+	return mapToReplaceCopy
 }
