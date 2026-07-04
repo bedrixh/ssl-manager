@@ -33,7 +33,15 @@ type CertificateConfig struct {
 }
 
 type DaemonConfig struct {
-	RenewIntervalDays int `yaml:"RenewIntervalDays" json:"RenewIntervalDays" toml:"RenewIntervalDays"`
+	RenewIntervalDays     int                   `yaml:"RenewIntervalDays" json:"RenewIntervalDays" toml:"RenewIntervalDays"`
+	NotificationsWebhooks []NotificationWebhook `yaml:"NotificationWebhooks" json:"NotificationWebhooks" toml:"NotificationWebhooks"`
+}
+
+type NotificationWebhook struct {
+	Url           string            `yaml:"Url" json:"Url" toml:"Url"`
+	PostData      map[string]string `yaml:"PostData" json:"PostData" toml:"PostData"`
+	NotifyFail    bool              `yaml:"NotifyFail" json:"NotifyFail" toml:"NotifyFail"`
+	NotifySuccess bool              `yaml:"NotifySuccess" json:"NotifySuccess" toml:"NotifySuccess"`
 }
 
 func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
