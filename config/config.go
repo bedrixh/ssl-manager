@@ -41,7 +41,7 @@ func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
 	for i := 0; i < len(c.IPs); i++ {
 		ipAdresses[i] = net.ParseIP(c.IPs[i])
 		if ipAdresses[i] == nil {
-			return nil, fmt.Errorf("ip address number %d is not valid ip address", i)
+			return nil, fmt.Errorf("ip address %d is not valid ip address", i)
 		}
 	}
 	return ipAdresses, nil
