@@ -25,6 +25,7 @@ func main() {
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
 	argVersionPtr := flag.Bool("version", false, "Print version information and exit")
+	argCheckConfigPtr := flag.Bool("check-config", false, "Checks config file passed in config argument")
 	argDaemonPtr := flag.Bool("daemon", false, "ssl-manager runs as daemon and renews certificates automaticaly, other flags than config are ignored")
 	flag.Parse()
 
@@ -42,6 +43,23 @@ func main() {
 	appConfig, err := config.GetConfig()
 	if err != nil {
 		panic(err)
+	}
+
+	if *argCheckConfigPtr {
+		err := config.LoadAppConfig(*argConfFilePtr)
+		if err != nil {
+			panic(fmt.Errorf("error configuration invalid %s", err))
+		}
+
+		fmt.Printf("Configuration is valid\n\n")
+		yaml, err := appConfig.GetYaml()
+		if err != nil {
+			panic(fmt.Errorf("error printing yaml: %s", err))
+		}
+
+		fmt.Println(yaml)
+
+		os.Exit(0)
 	}
 
 	if *argDaemonPtr {
@@ -151,7 +169,7 @@ func runDaemon() error {
 	for {
 		renewedCerts, certRenewErr := renewCerts(false)
 		if len(renewedCerts) > 0 || certRenewErr != nil {
-			err := notification.SendCertRenewNotifications(appConfig.Daemon.NotificationsWebhooks, renewedCerts, certRenewErr)
+			err := notification.SendCertRenewNotifications(appConfig.Daemon.NotificationWebhooks, renewedCerts, certRenewErr)
 			if certRenewErr != nil {
 				log.Fatalln(err)
 			}

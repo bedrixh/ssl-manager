@@ -10,9 +10,9 @@ import (
 )
 
 func SendCertRenewNotifications(webhooks []config.NotificationWebhook, renewedCerts []string, certRenewError error) error {
-	for _, v := range webhooks {
-		if (certRenewError == nil && v.NotifySuccess) || (certRenewError != nil && v.NotifyFail) {
-			err := SendCertRenewNotification(&v, renewedCerts, certRenewError)
+	for _, webhook := range webhooks {
+		if (certRenewError == nil && webhook.NotifySuccess) || (certRenewError != nil && webhook.NotifyFail) {
+			err := SendCertRenewNotification(&webhook, renewedCerts, certRenewError)
 			if err != nil {
 				return err
 			}

@@ -17,7 +17,7 @@ var appConfig *Configuration = nil
 type Configuration struct {
 	Daemon               DaemonConfig        `yaml:"Daemon" json:"Daemon" toml:"Daemon"`
 	CACertificate        CertificateConfig   `yaml:"CACertificate" json:"CACertificate" toml:"CACertificate"`
-	Certificates         []CertificateConfig `yaml:"Certificates" json:"Certificates" toml:"Certificates"`
+	Certificates         []CertificateConfig `yaml:"Certificates" json:"Certificates" toml:"Certificate"`
 	CertificatesDefaults CertificateConfig   `yaml:"CertificatesDefaults" json:"CertificatesDefaults" toml:"CertificatesDefaults"`
 }
 
@@ -33,11 +33,12 @@ type CertificateConfig struct {
 }
 
 type DaemonConfig struct {
-	RenewIntervalDays     int                   `yaml:"RenewIntervalDays" json:"RenewIntervalDays" toml:"RenewIntervalDays"`
-	NotificationsWebhooks []NotificationWebhook `yaml:"NotificationWebhooks" json:"NotificationWebhooks" toml:"NotificationWebhooks"`
+	RenewIntervalDays    int                   `yaml:"RenewIntervalDays" json:"RenewIntervalDays" toml:"RenewIntervalDays"`
+	NotificationWebhooks []NotificationWebhook `yaml:"NotificationWebhooks" json:"NotificationWebhooks" toml:"NotificationWebhook"`
 }
 
 type NotificationWebhook struct {
+	Name          string            `yaml:"Name" json:"Name" toml:"Name"`
 	Url           string            `yaml:"Url" json:"Url" toml:"Url"`
 	PostData      map[string]string `yaml:"PostData" json:"PostData" toml:"PostData"`
 	NotifyFail    bool              `yaml:"NotifyFail" json:"NotifyFail" toml:"NotifyFail"`
@@ -53,6 +54,22 @@ func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
 		}
 	}
 	return ipAdresses, nil
+}
+
+func (c *Configuration) GetYaml() (string, error) {
+	yaml, err := yaml.Marshal(c)
+	if err != nil {
+		return "", fmt.Errorf("error encoding config into yaml %s", err)
+	}
+	return string(yaml), nil
+}
+
+func (c *Configuration) GetToml() (string, error) {
+	toml, err := toml.Marshal(c)
+	if err != nil {
+		return "", fmt.Errorf("error encoding config into toml %s", err)
+	}
+	return string(toml), nil
 }
 
 func (c *CertificateConfig) GetCertPath() string {
