@@ -1,0 +1,62 @@
+# -------------------------------------------------
+# Global defaults for all certificates except CACertificate (optional)
+# -------------------------------------------------
+CertificatesDefaults:
+  # No values are required
+  ValidDays: 20
+  RenewThresholdDays: 8
+  OrganizationName: "Acme Corp"
+  Email: "admin@acme.example"
+
+# -------------------------------------------------
+# CA (root) certificate configuration
+# -------------------------------------------------
+CACertificate:
+  Name: "RootCA"                     # required
+  Path: "./certs/CA/"                # required
+  OrganizationName: "john doe CA"   # required, must differ from CertificatesDefaults.OrganizationName
+  Email: "johndoe@example.com"       # required
+  ValidDays: 79000                   # required
+  RenewThresholdDays: 30            # required
+
+# -------------------------------------------------
+# Individual SSL certificates
+# -------------------------------------------------
+# empty value is inhereted from CertficatesDefaults
+Certificates:
+  - Name: "service-frontend"
+    Path: "/etc/acme/pki/frontend"            # folder where cert.pem and key.pem will be stored
+    IPs:
+      - "10.0.0.12"                           # IP the SSL cert is issued for
+    DNSNames:
+      - "frontend.acme.example"               # DNS name the SSL cert is issued for
+
+  - Name: "service-backend"                   # required
+    Path: "/etc/acme/pki/backend"            # required
+    OrganizationName: "Acme Backend Team"   # required
+    Email: "backend-admin@acme.example"      # required
+    IPs:
+      - "10.0.0.13"
+      - "10.0.0.14"                           # required
+    DNSNames:
+      - "backend.acme.example"                # required
+    ValidDays: 20                             # initial validity since now (required)
+    RenewThresholdDays: 8                     # renew when remaining days < threshold (required)
+
+# -------------------------------------------------
+# Daemon configuration
+# -------------------------------------------------
+Daemon:
+  # Renewal interval in days (used only in daemon mode)
+  RenewIntervalDays: 7
+
+  NotificationWebhook:
+    - Name: "slack"   # name not used in code yet
+      Url: "https://hooks.slack.com/services/some-other-stuff"
+      NotifyFail: true
+      NotifySuccess: false
+      # PostData sent to the webhook; variables:
+      # %status% = "failed" or "success"
+      # %message% = "Certificates were renewed successfully" (plus list of renewed cert names)
+      PostData:
+        text: "ssl-manager %status% - %message%"

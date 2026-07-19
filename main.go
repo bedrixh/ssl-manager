@@ -25,7 +25,7 @@ func main() {
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
 	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
 	argVersionPtr := flag.Bool("version", false, "Print version information and exit")
-	argCheckConfigPtr := flag.Bool("check-config", false, "Checks config file passed in config argument")
+	argCheckConfigPtr := flag.Bool("check-config", false, "Checks config file passed in config argument, returnes loaded config in json")
 	argDaemonPtr := flag.Bool("daemon", false, "ssl-manager runs as daemon and renews certificates automaticaly, other flags than config are ignored")
 	flag.Parse()
 
@@ -52,12 +52,13 @@ func main() {
 		}
 
 		fmt.Printf("Configuration is valid\n\n")
-		yaml, err := appConfig.GetYaml()
+		// JSON seems like the easiest-to-read format; it is not easy to write, but for this purpose it seems best to me.
+		json, err := appConfig.GetJson()
 		if err != nil {
 			panic(fmt.Errorf("error printing yaml: %s", err))
 		}
 
-		fmt.Println(yaml)
+		fmt.Println(json)
 
 		os.Exit(0)
 	}

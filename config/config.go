@@ -72,6 +72,14 @@ func (c *Configuration) GetToml() (string, error) {
 	return string(toml), nil
 }
 
+func (c *Configuration) GetJson() (string, error) {
+	json, err := json.Marshal(c)
+	if err != nil {
+		return "", fmt.Errorf("error encoding config into json %s", err)
+	}
+	return string(json), nil
+}
+
 func (c *CertificateConfig) GetCertPath() string {
 	return filepath.Join(c.Path, "cert.pem")
 }
