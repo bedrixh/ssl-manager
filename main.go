@@ -83,18 +83,20 @@ func main() {
 	}
 
 	if *argGenCAPtr {
-		err := os.MkdirAll(appConfig.CACertificates[0].Path, os.FileMode(0775))
-		if err != nil {
-			panic(err)
-		}
-		certExists := appConfig.CACertificates[0].CertificateExists()
-		if (!certExists) || (certExists && *argForcePtr) {
-			err = certificates.GenerateCACert(&appConfig.CACertificates[0])
+		for i := range len(appConfig.CACertificates) {
+			err := os.MkdirAll(appConfig.CACertificates[i].Path, os.FileMode(0775))
 			if err != nil {
-				panic(fmt.Errorf("error generating CA certificate: %s", err))
+				panic(err)
 			}
-		} else {
-			panic("CA Certificate already exists, if you want to overwrite the old one use the --force argument")
+			certExists := appConfig.CACertificates[i].CertificateExists()
+			if (!certExists) || (certExists && *argForcePtr) {
+				err = certificates.GenerateCACert(&appConfig.CACertificates[i])
+				if err != nil {
+					panic(fmt.Errorf("error generating CA certificate: %s", err))
+				}
+			} else {
+				panic("CA Certificate already exists, if you want to overwrite the old one use the --force argument")
+			}
 		}
 	}
 
