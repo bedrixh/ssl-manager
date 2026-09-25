@@ -46,7 +46,7 @@ func callWebhook(url string, postData map[string]string) error {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if 200 <= resp.StatusCode && resp.StatusCode < 300 {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err

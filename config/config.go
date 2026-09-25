@@ -105,7 +105,13 @@ func (c *CertificateConfig) CertificateExists() bool {
 	if err != nil {
 		return false
 	}
-	return !fileInfo.IsDir()
+
+	fileInfo1, err := os.Stat(c.GetKeyPath())
+	if err != nil {
+		return false
+	}
+
+	return !fileInfo.IsDir() && !fileInfo1.IsDir()
 }
 
 func (c *CertificateConfig) GetCACertConfig() *CertificateConfig {
