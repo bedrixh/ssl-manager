@@ -58,11 +58,12 @@ func main() {
 		err := config.LoadAppConfig(*argConfFilePtr)
 		if err != nil {
 			fmt.Printf("error configuration invalid (%s)", err)
+			os.Exit(1)
 		} else {
 
 			fmt.Printf("Configuration is valid\n\n")
 			// JSON seems like the easiest-to-read format; it is not easy to write, but for this purpose it seems best to me.
-			json, err := appConfig.GetFormatedJson()
+			json, err := appConfig.GetFormattedJson()
 			if err != nil {
 				fmt.Printf("error rendering json: %s", err)
 				os.Exit(1)
@@ -148,7 +149,7 @@ func renewCerts(force bool) ([]string, error) {
 
 		} else {
 			err := os.MkdirAll(certificateConfig.Path, 0755)
-			if err != nil && err != os.ErrExist {
+			if err != nil && !errors.Is(err, os.ErrExist) {
 				return renewedCerts, err
 			}
 
@@ -186,12 +187,12 @@ func runDaemon() error {
 		if len(renewedCerts) > 0 || certRenewErr != nil {
 			err := notification.SendCertRenewNotifications(appConfig.Daemon.NotificationWebhooks, renewedCerts, certRenewErr)
 			if err != nil {
-				log.Fatalln(err)
+				log.Println(err)
 			}
 		}
 
 		if certRenewErr != nil {
-			log.Fatalln(certRenewErr)
+			return certRenewErr
 		}
 
 		<-ticker.C

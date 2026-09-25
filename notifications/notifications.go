@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"ssl-manager/config"
 	"strings"
+	"time"
 )
 
 func SendCertRenewNotifications(webhooks []config.NotificationWebhook, renewedCerts []string, certRenewError error) error {
@@ -39,14 +40,18 @@ func callWebhook(url string, postData map[string]string) error {
 
 	bodyReader := bytes.NewReader(jsonBody)
 
-	resp, err := http.Post(url, "application/json", bodyReader)
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Post(url, "application/json", bodyReader)
 	if err != nil {
 		return err
 	}
 
 	defer resp.Body.Close()
 
-	if 200 <= resp.StatusCode && resp.StatusCode < 300 {
+	if 200 > resp.StatusCode || resp.StatusCode >= 300 {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err

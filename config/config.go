@@ -50,7 +50,7 @@ type NotificationWebhook struct {
 	NotifySuccess bool              `yaml:"NotifySuccess" json:"NotifySuccess" toml:"NotifySuccess"`
 }
 
-func (c *CertificateConfig) GetIPAdresses() ([]net.IP, error) {
+func (c *CertificateConfig) GetIPAddresses() ([]net.IP, error) {
 	var ipAdresses = make([]net.IP, len(c.IPs))
 	for i := 0; i < len(c.IPs); i++ {
 		ipAdresses[i] = net.ParseIP(c.IPs[i])
@@ -85,7 +85,7 @@ func (c *Configuration) GetJson() (string, error) {
 	return string(json), nil
 }
 
-func (c *Configuration) GetFormatedJson() (string, error) {
+func (c *Configuration) GetFormattedJson() (string, error) {
 	json, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("error encoding config into json %s", err)
@@ -237,7 +237,7 @@ func validateConfig(config *Configuration) error {
 
 func validateCertificateConfig(certConfig *CertificateConfig) error {
 
-	if _, err := certConfig.GetIPAdresses(); err != nil {
+	if _, err := certConfig.GetIPAddresses(); err != nil {
 		return err
 	}
 
