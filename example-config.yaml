@@ -51,12 +51,13 @@ Daemon:
   RenewIntervalDays: 7
 
   NotificationWebhook:
-    - Name: "slack"   # name not used in code yet
+    - Name: "slack"   # name, is in error message when webhook config is invalid
       Url: "https://hooks.slack.com/services/some-other-stuff"
-      NotifyFail: true
-      NotifySuccess: false
-      # PostData sent to the webhook; variables:
-      # %status% = "failed" or "success"
-      # %message% = "Certificates were renewed successfully" (plus list of renewed cert names)
+      NotifyFail: true # notifies user when deamon atepmts to renew certificate and fails 
+      NotifySuccess: false # notifies user when any certificate is successfully renewed
+      # PostData are sended to the webhooks; 
+      # variables:
+      #   %status% = "failed" or "success"
+      #   %message% = "Certificates were renewed successfully" (plus list of renewed certificates names)
       PostData:
         text: "ssl-manager %status% - %message%"

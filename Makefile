@@ -1,8 +1,13 @@
+
+.PHONY: compile build install uninstall
+
+RM       = rm -f
+PREFIX   ?= /usr/local
 GO_LDFLAGS := -ldflags "-X main.Version=$$(git describe --tags --exclude release) -X main.Commit=$$(git rev-parse --short HEAD) -X main.BuildTime=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 compile:
 	@echo "Compiling for every OS and Platform"
-	GOOS=linux   GOAECH=amd64 go build $(GO_LDFLAGS) -o bin/ssl-manager-linux-amd64 .
+	GOOS=linux   GOARCH=amd64 go build $(GO_LDFLAGS) -o bin/ssl-manager-linux-amd64 .
 	GOOS=linux   GOARCH=arm   go build $(GO_LDFLAGS) -o bin/ssl-manager-linux-arm   .
 	GOOS=linux   GOARCH=arm64 go build $(GO_LDFLAGS) -o bin/ssl-manager-linux-arm64 .
 	GOOS=freebsd GOARCH=386   go build $(GO_LDFLAGS) -o bin/ssl-manager-freebsd-386 .
@@ -13,9 +18,9 @@ build:
 	go build $(GO_LDFLAGS) -o bin/ssl-manager .
 
 install: build
-	@echo Installing builded package
-	cp bin/ssl-manager /usr/bin/ssl-manager
+	@echo Installing built package
+	install -m 755 bin/ssl-manager  ${DESTDIR}${PREFIX}/bin/ssl-manager
 
 uninstall: 
 	@echo Removing binaries
-	rm -rf /usr/bin/ssl-manager
+	rm -rf ${DESTDIR}${PREFIX}/bin/ssl-manager

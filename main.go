@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -20,13 +21,13 @@ var (
 )
 
 func main() {
-	argConfFilePtr := flag.String("config", "/etc/ssl-manager/conf.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
-	argGenCAPtr := flag.Bool("gen-ca", false, "Generates certification authority certificate and stores it on the disk")
+	argConfFilePtr := flag.String("config", "/etc/ssl-manager/ssl-manager.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
+	argGenCAPtr := flag.Bool("gen-cas", false, "Generates certification authority certificates and stores them in configured folder")
 	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
-	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exists")
+	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exist")
 	argVersionPtr := flag.Bool("version", false, "Print version information and exit")
-	argCheckConfigPtr := flag.Bool("check-config", false, "Checks config file passed in config argument, returnes loaded config in json")
-	argDaemonPtr := flag.Bool("daemon", false, "ssl-manager runs as daemon and renews certificates automaticaly, other flags than config are ignored")
+	argCheckConfigPtr := flag.Bool("check-config", false, "Checks config file passed in config argument, writes out configuration of ssl-manager in json")
+	argDaemonPtr := flag.Bool("daemon", false, "ssl-manager runs as daemon and renews certificates automatically, other flags than config are ignored")
 	flag.Parse()
 
 	if *argVersionPtr {
@@ -37,54 +38,63 @@ func main() {
 	var err error
 	err = config.LoadAppConfig(*argConfFilePtr)
 	if err != nil {
-		fmt.Println("Failed to load config")
-		panic(err)
+		switch {
+		case errors.Is(err, os.ErrNotExist):
+			log.Fatalf("Config file \"%s\" does not exist.", *argConfFilePtr)
+		case errors.Is(err, os.ErrPermission):
+			log.Fatalf("Config file \"%s\" wrong permisions.", *argConfFilePtr)
+		default:
+			log.Fatalln(err.Error())
+		}
+
 	}
+
 	appConfig, err := config.GetConfig()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	if *argCheckConfigPtr {
 		err := config.LoadAppConfig(*argConfFilePtr)
 		if err != nil {
-			panic(fmt.Errorf("error configuration invalid %s", err))
+			fmt.Printf("error configuration invalid (%s)", err)
+		} else {
+
+			fmt.Printf("Configuration is valid\n\n")
+			// JSON seems like the easiest-to-read format; it is not easy to write, but for this purpose it seems best to me.
+			json, err := appConfig.GetFormatedJson()
+			if err != nil {
+				fmt.Printf("error rendering json: %s", err)
+				os.Exit(1)
+			}
+
+			fmt.Println(json)
 		}
-
-		fmt.Printf("Configuration is valid\n\n")
-		// JSON seems like the easiest-to-read format; it is not easy to write, but for this purpose it seems best to me.
-		json, err := appConfig.GetJson()
-		if err != nil {
-			panic(fmt.Errorf("error printing yaml: %s", err))
-		}
-
-		fmt.Println(json)
-
 		os.Exit(0)
 	}
 
 	if *argDaemonPtr {
 		err = runDaemon()
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		} else {
 			os.Exit(0)
 		}
 	}
 
 	if *argGenCAPtr {
-		err := os.MkdirAll(appConfig.CACertificate.Path, 0750)
+		err := os.MkdirAll(appConfig.CACertificates[0].Path, os.FileMode(appConfig.CACertificates[0].Permissions))
 		if err != nil {
 			panic(err)
 		}
-		certExists := appConfig.CACertificate.CertificateExists()
+		certExists := appConfig.CACertificates[0].CertificateExists()
 		if (!certExists) || (certExists && *argForcePtr) {
-			err = certificates.GenerateCACert(&appConfig.CACertificate)
+			err = certificates.GenerateCACert(&appConfig.CACertificates[0])
 			if err != nil {
 				panic(fmt.Errorf("error generating CA certificate: %s", err))
 			}
 		} else {
-			panic("CA Certificate already exists, if u want to overwrite the old one use argument force")
+			panic("CA Certificate already exists, if you want to overwrite the old one use the --force argument")
 		}
 	}
 
@@ -114,13 +124,13 @@ func renewCerts(force bool) ([]string, error) {
 		if !force && certExists {
 			daysRemaining, err := certificates.GetValidDaysRemaining(certificateConfig)
 			if err != nil {
-				return renewedCerts, fmt.Errorf("error geting certificate %s validity: %s", certificateConfig.Name, err)
+				return renewedCerts, fmt.Errorf("error getting certificate %s validity: %s", certificateConfig.Name, err)
 			}
 
 			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
 
 				//renewing certificate if it is the time
-				err = certificates.GenerateSSLCert(certificateConfig, &appConfig.CACertificate)
+				err = certificates.GenerateSSLCert(certificateConfig, &appConfig.CACertificates[0])
 				if err != nil {
 					return renewedCerts, fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 				} else {
@@ -141,7 +151,7 @@ func renewCerts(force bool) ([]string, error) {
 			}
 
 			//renewing certificate even if it exist and it is not its time yet
-			err = certificates.GenerateSSLCert(certificateConfig, &appConfig.CACertificate)
+			err = certificates.GenerateSSLCert(certificateConfig, &appConfig.CACertificates[0])
 			if err != nil {
 				return renewedCerts, fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 
@@ -169,14 +179,17 @@ func runDaemon() error {
 
 	for {
 		renewedCerts, certRenewErr := renewCerts(false)
+
+		// Send notification to user if any certificate is renewed or error ocures
 		if len(renewedCerts) > 0 || certRenewErr != nil {
 			err := notification.SendCertRenewNotifications(appConfig.Daemon.NotificationWebhooks, renewedCerts, certRenewErr)
-			if certRenewErr != nil {
-				log.Fatalln(err)
-			}
 			if err != nil {
 				log.Fatalln(err)
 			}
+		}
+
+		if certRenewErr != nil {
+			log.Fatalln(certRenewErr)
 		}
 
 		<-ticker.C

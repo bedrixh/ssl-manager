@@ -22,8 +22,7 @@ The binary (`ssl-manager` or `ssl-manager.exe`) appears in the ./bin/.
 
 
 ## Configuration
-There are example configuration files, conf.json, conf.toml and conf.yaml.
-Default config file path is /etc/ssl-manager/conf.toml
+Default config file path is /etc/ssl-manager/ssl-manager.yaml
 Example configuration files are in example-config.toml and example-config.yaml
 
 ## Usage  

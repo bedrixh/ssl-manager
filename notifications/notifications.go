@@ -1,9 +1,10 @@
-package notification
+package notifications
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"ssl-manager/config"
 	"strings"
@@ -35,6 +36,7 @@ func callWebhook(url string, postData map[string]string) error {
 	if err != nil {
 		return err
 	}
+
 	bodyReader := bytes.NewReader(jsonBody)
 
 	resp, err := http.Post(url, "application/json", bodyReader)
@@ -42,8 +44,14 @@ func callWebhook(url string, postData map[string]string) error {
 		return err
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("sending http request fialed, status code %d, response: %s", resp.StatusCode, resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("sending HTTP request failed, status code %d, response: %s", resp.StatusCode, respBody)
 	}
 
 	return nil

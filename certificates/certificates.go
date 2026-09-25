@@ -16,7 +16,7 @@ import (
 )
 
 func GenerateCACert(certConfig *config.CertificateConfig) error {
-	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		return err
 	}
@@ -43,17 +43,17 @@ func GenerateCACert(certConfig *config.CertificateConfig) error {
 		PublicKeyAlgorithm:    x509.ECDSA,
 	}
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &priv.PublicKey, priv)
+	certBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return err
 	}
 
-	err = SaveKeyToDisk(certConfig.GetKeyPath(), priv)
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey, os.FileMode(certConfig.Permissions))
 	if err != nil {
 		return err
 	}
 
-	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes)
+	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes, os.FileMode(certConfig.Permissions))
 	if err != nil {
 		return err
 	}
@@ -111,12 +111,12 @@ func GenerateSSLCert(certConfig *config.CertificateConfig, caCertConfig *config.
 		return err
 	}
 
-	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey)
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey, os.FileMode(certConfig.Permissions))
 	if err != nil {
 		return err
 	}
 
-	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes)
+	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes, os.FileMode(certConfig.Permissions))
 	if err != nil {
 		return err
 	}
@@ -168,8 +168,8 @@ func GetKeyFromDisk(path string) (*ecdsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func SaveCertToDisk(path string, certBytes []byte) error {
-	certOut, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0640)
+func SaveCertToDisk(path string, certBytes []byte, fileMode os.FileMode) error {
+	certOut, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}
@@ -183,8 +183,8 @@ func SaveCertToDisk(path string, certBytes []byte) error {
 	return nil
 }
 
-func SaveKeyToDisk(path string, privateKey *ecdsa.PrivateKey) error {
-	privateKeyFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0640)
+func SaveKeyToDisk(path string, privateKey *ecdsa.PrivateKey, fileMode os.FileMode) error {
+	privateKeyFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}
