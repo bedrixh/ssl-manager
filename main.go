@@ -83,7 +83,7 @@ func main() {
 	}
 
 	if *argGenCAPtr {
-		err := os.MkdirAll(appConfig.CACertificates[0].Path, os.FileMode(appConfig.CACertificates[0].Permissions))
+		err := os.MkdirAll(appConfig.CACertificates[0].Path, os.FileMode(0775))
 		if err != nil {
 			panic(err)
 		}

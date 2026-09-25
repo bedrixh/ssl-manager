@@ -26,7 +26,7 @@ type CertificateConfig struct {
 	Path               string   `yaml:"Path" json:"Path" toml:"Path"`
 	UserOwner          string   `yaml:"UserOwner" json:"UserOwner" toml:"UserOwner"`
 	GroupOwner         string   `yaml:"GroupOwner" json:"GroupOwner" toml:"GroupOwner"`
-	Permissions        uint8    `yaml:"Permissions" json:"Permissions" toml:"Permissions"`
+	Permissions        uint16   `yaml:"Permissions" json:"Permissions" toml:"Permissions"`
 	CACertName         string   `yaml:"CACertName" json:"CACertName" toml:"CACertName"`
 	OrganizationName   string   `yaml:"OrganizationName" json:"OrganizationName" toml:"OrganizationName"`
 	Email              string   `yaml:"Email" json:"Email" toml:"Email"`
@@ -108,11 +108,27 @@ func (c *CertificateConfig) CertificateExists() bool {
 	return !fileInfo.IsDir()
 }
 
+func (c *CertificateConfig) GetCACertConfig() *CertificateConfig {
+	for i := range len(appConfig.CACertificates) {
+		if appConfig.CACertificates[i].Name == c.CACertName {
+			return &appConfig.CACertificates[i]
+		}
+	}
+	return nil
+}
+
 func GetConfig() (*Configuration, error) {
 	if appConfig == nil {
-		return nil, fmt.Errorf("config is empty")
+		return nil, fmt.Errorf("cannot get configuration, because it is not loaded")
 	}
 	return appConfig, nil
+}
+
+func GetConfigNoErr() *Configuration {
+	if appConfig == nil {
+		panic(fmt.Errorf("cannot get configuration, because it is not loaded"))
+	}
+	return appConfig
 }
 
 // variable holding current config path, for live config reloads
@@ -233,7 +249,7 @@ func validateCertificateConfig(certConfig *CertificateConfig) error {
 		return fmt.Errorf("Email cannot be empty")
 
 	case 0 >= certConfig.ValidDays:
-		return fmt.Errorf("Validity cannot be empty or lower than 0")
+		return fmt.Errorf("Validity must be greater than 0 days")
 
 	case certConfig.ValidDays < certConfig.RenewThresholdDays:
 		return fmt.Errorf("renew threshold has to be smaller or equal to validity")
@@ -244,10 +260,6 @@ func validateCertificateConfig(certConfig *CertificateConfig) error {
 }
 
 func validateCACertificateConfig(certConfig *CertificateConfig) error {
-
-	if _, err := certConfig.GetIPAdresses(); err != nil {
-		return err
-	}
 
 	switch {
 	case certConfig.Name == "":
@@ -262,8 +274,8 @@ func validateCACertificateConfig(certConfig *CertificateConfig) error {
 	case certConfig.Email == "":
 		return fmt.Errorf("Email cannot be empty")
 
-	case 0 > certConfig.ValidDays:
-		return fmt.Errorf("Validity has to be bigger than 0 days")
+	case 0 >= certConfig.ValidDays:
+		return fmt.Errorf("Validity must be greater than 0 days")
 
 	case certConfig.ValidDays < certConfig.RenewThresholdDays:
 		return fmt.Errorf("renew threshold has to be smaller or equal to validity")
@@ -274,7 +286,12 @@ func validateCACertificateConfig(certConfig *CertificateConfig) error {
 }
 
 func populateDefaults(config *Configuration) {
-	for i := 0; i < len(config.Certificates); i++ {
+	if config.CertificatesDefaults.Permissions == 0 {
+		config.CertificatesDefaults.Permissions = 0644
+	}
+
+	// certificates defaults
+	for i := range len(config.Certificates) {
 		certificateConfig := &config.Certificates[i]
 		if certificateConfig.ValidDays == 0 {
 			certificateConfig.ValidDays = config.CertificatesDefaults.ValidDays
@@ -291,6 +308,15 @@ func populateDefaults(config *Configuration) {
 		if certificateConfig.RenewThresholdDays == 0 {
 			certificateConfig.RenewThresholdDays = config.CertificatesDefaults.RenewThresholdDays
 		}
+		if certificateConfig.Permissions == 0 {
+			certificateConfig.Permissions = config.CertificatesDefaults.Permissions
+		}
+	}
 
+	// CA certificates defaults
+	for i := range len(config.CACertificates) {
+		if config.CACertificates[i].Permissions == 0 {
+			config.CACertificates[i].Permissions = 0644
+		}
 	}
 }
