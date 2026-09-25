@@ -1,0 +1,6 @@
+services:
+  ssl-manager:
+    build: ./
+    volumes:
+      - ./certs:/app/certs
+      - ./conf.yaml:/app/conf.yaml
