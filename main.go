@@ -42,7 +42,7 @@ func main() {
 		case errors.Is(err, os.ErrNotExist):
 			log.Fatalf("Config file \"%s\" does not exist.", *argConfFilePtr)
 		case errors.Is(err, os.ErrPermission):
-			log.Fatalf("Config file \"%s\" wrong permisions.", *argConfFilePtr)
+			log.Fatalf("Config file \"%s\" incorect permissions.", *argConfFilePtr)
 		default:
 			log.Fatalln(err.Error())
 		}

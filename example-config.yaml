@@ -22,7 +22,7 @@ CACertificates:
 # -------------------------------------------------
 # Individual SSL certificates
 # -------------------------------------------------
-# empty value is inhereted from CertficatesDefaults
+# empty value is inherited from CertificatesDefaults
 Certificates:
   - Name: "service-frontend"
     Path: "./pki/frontend" # folder where cert.pem and key.pem will be stored
@@ -54,9 +54,9 @@ Daemon:
   NotificationWebhook:
     - Name: "slack" # name, is in error message when webhook config is invalid
       Url: "https://hooks.slack.com/services/some-other-stuff"
-      NotifyFail: true # notifies user when deamon atepmts to renew certificate and fails
+      NotifyFail: true # notifies user when deamon attepmts to renew certificate and fails
       NotifySuccess: false # notifies user when any certificate is successfully renewed
-      # PostData are sended to the webhooks;
+      # PostData are sent to the webhooks;
       # variables:
       #   %status% = "failed" or "success"
       #   %message% = "Certificates were renewed successfully" (plus list of renewed certificates names)
