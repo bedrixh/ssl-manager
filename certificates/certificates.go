@@ -75,7 +75,7 @@ func GenerateSSLCert(certConfig *config.CertificateConfig, caCertConfig *config.
 
 	notBefore, notAfter := getValidFromAfter(certConfig)
 
-	ipAddresses, err := certConfig.GetIPAdresses()
+	ipAddresses, err := certConfig.GetIPAddresses()
 	if err != nil {
 		return err
 	}

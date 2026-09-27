@@ -7,8 +7,8 @@
 - Generates self‑signed certificates and renews existing ones.
 
 ## Building
-Go is required to build the project
-Clone the repo and build
+Go is required to build the project.
+Clone the repo and build using GNU make.
 
 ```bash
 git clone https://github.com/bedrixh/ssl-manager.git
@@ -18,12 +18,12 @@ make build          # builds for your current OS/arch
 make compile        # builds for Linux, macOS, and Windows (outputs to ./bin/)
 ```
 
-The binary (`ssl-manager` or `ssl-manager.exe`) appears in the ./bin/.
+The binary (`ssl-manager` or `ssl-manager.exe`) is written to ./bin/.
 
 
 ## Configuration
-Default config file path is /etc/ssl-manager/ssl-manager.yaml
-Example configuration files are in example-config.toml and example-config.yaml
+Default config file path is /etc/ssl-manager/ssl-manager.yaml.
+Example configuration files are in example-config.toml and example-config.yaml.
 
 ## Usage  
 The most important argument is `--help`:
