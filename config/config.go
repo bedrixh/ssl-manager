@@ -139,7 +139,7 @@ func (c *CertificateConfig) IsOkay() (bool, error) {
 		return false, err
 	}
 	certMode := certInfo.Mode()
-	if certMode.Perm() != os.FileMode(c.CertPermissions).Perm() {
+	if uint32(certMode.Perm()) != c.CertPermissions {
 		return false, nil
 	}
 
@@ -151,6 +151,18 @@ func (c *CertificateConfig) IsOkay() (bool, error) {
 	if uint32(keyMode.Perm()) != c.KeyPermissions {
 		return false, nil
 	}
+
+	cert, err := c.GetCertFromDisk()
+	if err != nil {
+		return false, err
+		cert.PublicKey = nil
+	}
+	key, err := c.GetKeyFromDisk()
+	if err != nil {
+		return false, err
+	}
+	println(key.PublicKey.Bytes())
+	println(cert.PublicKey)
 
 	return true, nil
 }
