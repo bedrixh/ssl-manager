@@ -7,6 +7,7 @@ CertificatesDefaults:
   RenewThresholdDays: 8
   OrganizationName: "Acme Corp"
   Email: "admin@acme.example"
+  CACertName: "RootCA"
 
 # -------------------------------------------------
 # CA (root) certificate configuration
@@ -51,7 +52,7 @@ Daemon:
   # Renewal interval in days (used only in daemon mode)
   RenewIntervalDays: 7
 
-  NotificationWebhook:
+  NotificationWebhooks:
     - Name: "slack" # name, is in error message when webhook config is invalid
       Url: "https://hooks.slack.com/services/some-other-stuff"
       NotifyFail: true # notifies user when deamon attepmts to renew certificate and fails

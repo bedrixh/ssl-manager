@@ -133,7 +133,7 @@ func renewCerts(force bool) ([]string, error) {
 			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
 
 				//renewing certificate if it is the time
-				err = certificates.GenerateSSLCert(certificateConfig, certificateConfig.GetCACertConfig())
+				err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 				if err != nil {
 					return renewedCerts, fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 				} else {
@@ -154,7 +154,7 @@ func renewCerts(force bool) ([]string, error) {
 			}
 
 			//renewing certificate even if it exist and it is not its time yet
-			err = certificates.GenerateSSLCert(certificateConfig, certificateConfig.GetCACertConfig())
+			err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 			if err != nil {
 				return renewedCerts, fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
 
@@ -192,7 +192,7 @@ func runDaemon() error {
 		}
 
 		if certRenewErr != nil {
-			return certRenewErr
+			log.Println(certRenewErr)
 		}
 
 		<-ticker.C

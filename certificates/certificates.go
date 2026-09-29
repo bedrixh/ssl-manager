@@ -48,12 +48,12 @@ func GenerateCACert(certConfig *config.CertificateConfig) error {
 		return err
 	}
 
-	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey, os.FileMode(certConfig.Permissions))
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey, os.FileMode(certConfig.KeyPermissions))
 	if err != nil {
 		return err
 	}
 
-	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes, os.FileMode(certConfig.Permissions))
+	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes, os.FileMode(certConfig.CertPermissions))
 	if err != nil {
 		return err
 	}
@@ -111,12 +111,12 @@ func GenerateSSLCert(certConfig *config.CertificateConfig, caCertConfig *config.
 		return err
 	}
 
-	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey, os.FileMode(certConfig.Permissions))
+	err = SaveKeyToDisk(certConfig.GetKeyPath(), privateKey, os.FileMode(certConfig.KeyPermissions))
 	if err != nil {
 		return err
 	}
 
-	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes, os.FileMode(certConfig.Permissions))
+	err = SaveCertToDisk(certConfig.GetCertPath(), certBytes, os.FileMode(certConfig.CertPermissions))
 	if err != nil {
 		return err
 	}

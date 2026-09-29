@@ -26,7 +26,8 @@ type CertificateConfig struct {
 	Path               string   `yaml:"Path" json:"Path" toml:"Path"`
 	UserOwner          string   `yaml:"UserOwner" json:"UserOwner" toml:"UserOwner"`
 	GroupOwner         string   `yaml:"GroupOwner" json:"GroupOwner" toml:"GroupOwner"`
-	Permissions        uint16   `yaml:"Permissions" json:"Permissions" toml:"Permissions"`
+	KeyPermissions     uint16   `yaml:"KeyPermissions" json:"KeyPermissions" toml:"KeyPermissions"`
+	CertPermissions    uint16   `yaml:"CertPermissions" json:"CertPermissions" toml:"CertPermissions"`
 	CACertName         string   `yaml:"CACertName" json:"CACertName" toml:"CACertName"`
 	OrganizationName   string   `yaml:"OrganizationName" json:"OrganizationName" toml:"OrganizationName"`
 	Email              string   `yaml:"Email" json:"Email" toml:"Email"`
@@ -114,10 +115,10 @@ func (c *CertificateConfig) CertificateExists() bool {
 	return !fileInfo.IsDir() && !fileInfo1.IsDir()
 }
 
-func (c *CertificateConfig) GetCACertConfig() *CertificateConfig {
-	for i := range len(appConfig.CACertificates) {
-		if appConfig.CACertificates[i].Name == c.CACertName {
-			return &appConfig.CACertificates[i]
+func (c *Configuration) GetCACertConfigByName(name string) *CertificateConfig {
+	for i := range len(c.CACertificates) {
+		if c.CACertificates[i].Name == name {
+			return &c.CACertificates[i]
 		}
 	}
 	return nil
@@ -214,7 +215,7 @@ func loadYamlConfig(yamlBytes []byte) (*Configuration, error) {
 func validateConfig(config *Configuration) error {
 	for i := 0; i < len(config.Certificates); i++ {
 		certConfig := &config.Certificates[i]
-		err := validateCertificateConfig(certConfig)
+		err := validateCertificateConfig(config, certConfig)
 		if err != nil {
 			return fmt.Errorf("certificate: %s (%s)", certConfig.Name, err)
 		}
@@ -222,7 +223,7 @@ func validateConfig(config *Configuration) error {
 
 	for i := 0; i < len(config.CACertificates); i++ {
 		certConfig := &config.CACertificates[i]
-		err := validateCertificateConfig(certConfig)
+		err := validateCACertificateConfig(certConfig)
 		if err != nil {
 			return fmt.Errorf("certificate: %s (%s)", certConfig.Name, err)
 		}
@@ -235,7 +236,7 @@ func validateConfig(config *Configuration) error {
 	return nil
 }
 
-func validateCertificateConfig(certConfig *CertificateConfig) error {
+func validateCertificateConfig(config *Configuration, certConfig *CertificateConfig) error {
 
 	if _, err := certConfig.GetIPAddresses(); err != nil {
 		return err
@@ -258,7 +259,10 @@ func validateCertificateConfig(certConfig *CertificateConfig) error {
 		return fmt.Errorf("Validity must be greater than 0 days")
 
 	case certConfig.ValidDays < certConfig.RenewThresholdDays:
-		return fmt.Errorf("renew threshold has to be smaller or equal to validity")
+		return fmt.Errorf("RenewThresholdDays has to be smaller or equal to validity")
+
+	case config.GetCACertConfigByName(certConfig.CACertName) == nil:
+		return fmt.Errorf("CACertName must be valid CA certificate name")
 
 	}
 
@@ -292,8 +296,12 @@ func validateCACertificateConfig(certConfig *CertificateConfig) error {
 }
 
 func populateDefaults(config *Configuration) {
-	if config.CertificatesDefaults.Permissions == 0 {
-		config.CertificatesDefaults.Permissions = 0644
+	if config.CertificatesDefaults.CertPermissions == 0 {
+		config.CertificatesDefaults.CertPermissions = 0644
+	}
+
+	if config.CertificatesDefaults.KeyPermissions == 0 {
+		config.CertificatesDefaults.KeyPermissions = 0600
 	}
 
 	// certificates defaults
@@ -314,15 +322,21 @@ func populateDefaults(config *Configuration) {
 		if certificateConfig.RenewThresholdDays == 0 {
 			certificateConfig.RenewThresholdDays = config.CertificatesDefaults.RenewThresholdDays
 		}
-		if certificateConfig.Permissions == 0 {
-			certificateConfig.Permissions = config.CertificatesDefaults.Permissions
+		if certificateConfig.KeyPermissions == 0 {
+			certificateConfig.KeyPermissions = config.CertificatesDefaults.KeyPermissions
+		}
+		if certificateConfig.CACertName == "" {
+			certificateConfig.CACertName = config.CertificatesDefaults.CACertName
 		}
 	}
 
 	// CA certificates defaults
 	for i := range len(config.CACertificates) {
-		if config.CACertificates[i].Permissions == 0 {
-			config.CACertificates[i].Permissions = 0644
+		if config.CACertificates[i].KeyPermissions == 0 {
+			config.CACertificates[i].KeyPermissions = 0644
+		}
+		if config.CACertificates[i].CertPermissions == 0 {
+			config.CACertificates[i].CertPermissions = 0600
 		}
 	}
 }

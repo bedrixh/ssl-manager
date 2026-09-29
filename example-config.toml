@@ -46,7 +46,7 @@ RenewThresholdDays = 8  # required
 # Renews certificates interval in days, it is only being used in daemon mode
 RenewIntervalDays = 7
 
-[[Daemon.NotificationWebhook]]
+[[Daemon.NotificationWebhooks]]
 # Name does not matter for now, it is not used in code yet
 Name = "slack"
 Url = "https://hooks.slack.com/services/some-other-stuff"
