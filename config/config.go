@@ -297,11 +297,11 @@ func validateCACertificateConfig(certConfig *CertificateConfig) error {
 
 func populateDefaults(config *Configuration) {
 	if config.CertificatesDefaults.CertPermissions == 0 {
-		config.CertificatesDefaults.CertPermissions = 0644
+		config.CertificatesDefaults.CertPermissions = 0600
 	}
 
 	if config.CertificatesDefaults.KeyPermissions == 0 {
-		config.CertificatesDefaults.KeyPermissions = 0600
+		config.CertificatesDefaults.KeyPermissions = 0644
 	}
 
 	// certificates defaults
@@ -333,10 +333,10 @@ func populateDefaults(config *Configuration) {
 	// CA certificates defaults
 	for i := range len(config.CACertificates) {
 		if config.CACertificates[i].KeyPermissions == 0 {
-			config.CACertificates[i].KeyPermissions = 0644
+			config.CACertificates[i].KeyPermissions = 0600
 		}
 		if config.CACertificates[i].CertPermissions == 0 {
-			config.CACertificates[i].CertPermissions = 0600
+			config.CACertificates[i].CertPermissions = 0644
 		}
 	}
 }
