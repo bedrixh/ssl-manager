@@ -325,6 +325,9 @@ func populateDefaults(config *Configuration) {
 		if certificateConfig.KeyPermissions == 0 {
 			certificateConfig.KeyPermissions = config.CertificatesDefaults.KeyPermissions
 		}
+		if certificateConfig.CertPermissions == 0 {
+			certificateConfig.CertPermissions = config.CertificatesDefaults.CertPermissions
+		}
 		if certificateConfig.CACertName == "" {
 			certificateConfig.CACertName = config.CertificatesDefaults.CACertName
 		}
