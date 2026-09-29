@@ -327,12 +327,12 @@ func validateCACertificateConfig(certConfig *CertificateConfig) error {
 }
 
 func populateDefaults(config *Configuration) {
-	if config.CertificatesDefaults.CertPermissions == 0 {
-		config.CertificatesDefaults.CertPermissions = 0600
+	if config.CertificatesDefaults.KeyPermissions == 0 {
+		config.CertificatesDefaults.KeyPermissions = 0600
 	}
 
-	if config.CertificatesDefaults.KeyPermissions == 0 {
-		config.CertificatesDefaults.KeyPermissions = 0644
+	if config.CertificatesDefaults.CertPermissions == 0 {
+		config.CertificatesDefaults.CertPermissions = 0644
 	}
 
 	// certificates defaults
