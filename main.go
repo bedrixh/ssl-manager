@@ -128,6 +128,7 @@ func renewCerts(force bool) ([]string, error) {
 			isOkay, err := certificateConfig.IsOkay()
 			if err != nil {
 				log.Printf("error getting certificate %s validity: %s", certificateConfig.Name, err)
+				continue
 			}
 
 			if isOkay == false {
