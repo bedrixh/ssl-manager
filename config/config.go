@@ -16,7 +16,7 @@ var appConfig *Configuration = nil
 
 type Configuration struct {
 	Daemon               DaemonConfig        `yaml:"Daemon" json:"Daemon" toml:"Daemon"`
-	CACertificates       []CertificateConfig `yaml:"CACertificates" json:"CACertificates" toml:"CACertificates"`
+	CACertificates       []CertificateConfig `yaml:"CACertificates" json:"CACertificates" toml:"CACertificate"`
 	Certificates         []CertificateConfig `yaml:"Certificates" json:"Certificates" toml:"Certificate"`
 	CertificatesDefaults CertificateConfig   `yaml:"CertificatesDefaults" json:"CertificatesDefaults" toml:"CertificatesDefaults"`
 }
@@ -26,8 +26,8 @@ type CertificateConfig struct {
 	Path               string   `yaml:"Path" json:"Path" toml:"Path"`
 	UserOwner          string   `yaml:"UserOwner" json:"UserOwner" toml:"UserOwner"`
 	GroupOwner         string   `yaml:"GroupOwner" json:"GroupOwner" toml:"GroupOwner"`
-	KeyPermissions     uint16   `yaml:"KeyPermissions" json:"KeyPermissions" toml:"KeyPermissions"`
-	CertPermissions    uint16   `yaml:"CertPermissions" json:"CertPermissions" toml:"CertPermissions"`
+	KeyPermissions     uint32   `yaml:"KeyPermissions" json:"KeyPermissions" toml:"KeyPermissions"`
+	CertPermissions    uint32   `yaml:"CertPermissions" json:"CertPermissions" toml:"CertPermissions"`
 	CACertName         string   `yaml:"CACertName" json:"CACertName" toml:"CACertName"`
 	OrganizationName   string   `yaml:"OrganizationName" json:"OrganizationName" toml:"OrganizationName"`
 	Email              string   `yaml:"Email" json:"Email" toml:"Email"`
@@ -94,6 +94,15 @@ func (c *Configuration) GetFormattedJson() (string, error) {
 	return string(json), nil
 }
 
+func (c *Configuration) GetCACertConfigByName(name string) *CertificateConfig {
+	for i := range len(c.CACertificates) {
+		if c.CACertificates[i].Name == name {
+			return &c.CACertificates[i]
+		}
+	}
+	return nil
+}
+
 func (c *CertificateConfig) GetCertPath() string {
 	return filepath.Join(c.Path, "cert.pem")
 }
@@ -115,13 +124,35 @@ func (c *CertificateConfig) CertificateExists() bool {
 	return !fileInfo.IsDir() && !fileInfo1.IsDir()
 }
 
-func (c *Configuration) GetCACertConfigByName(name string) *CertificateConfig {
-	for i := range len(c.CACertificates) {
-		if c.CACertificates[i].Name == name {
-			return &c.CACertificates[i]
-		}
+func (c *CertificateConfig) IsOkay() (bool, error) {
+	days, err := c.GetValidDaysRemaining()
+	if err != nil {
+		return false, err
 	}
-	return nil
+
+	if days <= int64(c.RenewThresholdDays) {
+		return false, nil
+	}
+
+	certInfo, err := os.Stat(c.GetCertPath())
+	if err != nil {
+		return false, err
+	}
+	certMode := certInfo.Mode()
+	if certMode.Perm() != os.FileMode(c.CertPermissions).Perm() {
+		return false, nil
+	}
+
+	keyInfo, err := os.Stat(c.GetKeyPath())
+	if err != nil {
+		return false, err
+	}
+	keyMode := keyInfo.Mode()
+	if uint32(keyMode.Perm()) != c.KeyPermissions {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func GetConfig() (*Configuration, error) {

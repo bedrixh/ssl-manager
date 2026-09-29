@@ -125,24 +125,28 @@ func renewCerts(force bool) ([]string, error) {
 
 		certExists := certificateConfig.CertificateExists()
 		if !force && certExists {
-			daysRemaining, err := certificates.GetValidDaysRemaining(certificateConfig)
+			isOkay, err := certificateConfig.IsOkay()
 			if err != nil {
-				return renewedCerts, fmt.Errorf("error getting certificate %s validity: %s", certificateConfig.Name, err)
+				log.Printf("error getting certificate %s validity: %s", certificateConfig.Name, err)
 			}
 
-			if int64(certificateConfig.RenewThresholdDays) > daysRemaining {
+			if isOkay == false {
 
 				//renewing certificate if it is the time
 				err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 				if err != nil {
-					return renewedCerts, fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
+					log.Printf("error renewing certificate %s: %s", certificateConfig.Name, err)
 				} else {
-					fmt.Printf("%s: renewed successfully\n", certificateConfig.Name)
+					log.Printf("%s: renewed successfully\n", certificateConfig.Name)
 					renewedCerts = append(renewedCerts, certificateConfig.Name)
 				}
 
 			} else {
-				fmt.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(daysRemaining))
+				remainingDays, err := certificateConfig.GetValidDaysRemaining()
+				if err != nil {
+					log.Printf("error geting remaining days of certficate %s:%s", certificateConfig.Name, err)
+				}
+				log.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(remainingDays))
 			}
 
 			continue
@@ -156,10 +160,10 @@ func renewCerts(force bool) ([]string, error) {
 			//renewing certificate even if it exist and it is not its time yet
 			err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 			if err != nil {
-				return renewedCerts, fmt.Errorf("error renewing certificate %s: %s", certificateConfig.Name, err)
+				log.Printf("error renewing certificate %s: %s", certificateConfig.Name, err)
 
 			} else {
-				fmt.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
+				log.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
 				renewedCerts = append(renewedCerts, certificateConfig.Name)
 
 			}
