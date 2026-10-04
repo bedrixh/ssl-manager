@@ -111,22 +111,28 @@ func (c *CertificateConfig) GetKeyPath() string {
 }
 
 func (c *CertificateConfig) CertificateExists() bool {
-	fileInfo, err := os.Stat(c.GetCertPath())
+	certInfo, err := os.Stat(c.GetCertPath())
 	if err != nil {
 		return false
 	}
 
-	fileInfo1, err := os.Stat(c.GetKeyPath())
+	keyInfo, err := os.Stat(c.GetKeyPath())
 	if err != nil {
 		return false
 	}
 
-	return !fileInfo.IsDir() && !fileInfo1.IsDir()
+	return !certInfo.IsDir() && !keyInfo.IsDir()
 }
 
 func (c *CertificateConfig) IsOkay() (bool, error) {
+
+	if c.CertificateExists() == false {
+		return false, nil
+	}
+
 	days, err := c.GetValidDaysRemaining()
 	if err != nil {
+
 		return false, err
 	}
 
@@ -151,18 +157,6 @@ func (c *CertificateConfig) IsOkay() (bool, error) {
 	if uint32(keyMode.Perm()) != c.KeyPermissions {
 		return false, nil
 	}
-
-	cert, err := c.GetCertFromDisk()
-	if err != nil {
-		return false, err
-		cert.PublicKey = nil
-	}
-	key, err := c.GetKeyFromDisk()
-	if err != nil {
-		return false, err
-	}
-	println(key.PublicKey.Bytes())
-	println(cert.PublicKey)
 
 	return true, nil
 }

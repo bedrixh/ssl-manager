@@ -92,7 +92,7 @@ func (c *CertificateConfig) SaveKeyToDisk(privateKey *ecdsa.PrivateKey) error {
 func (c *CertificateConfig) GetValidDaysRemaining() (int64, error) {
 	cert, err := c.GetCertFromDisk()
 	if err != nil {
-		return 0, fmt.Errorf("error reading certificate from disk: %s", err)
+		return -1, fmt.Errorf("error reading certificate from disk: %s", err)
 	}
 
 	// 86400 is 1 day in seconds

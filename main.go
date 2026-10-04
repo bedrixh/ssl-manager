@@ -122,54 +122,48 @@ func renewCerts(force bool) ([]string, error) {
 
 	for i := 0; i < len(appConfig.Certificates); i++ {
 		certificateConfig := &appConfig.Certificates[i]
+		err := os.MkdirAll(certificateConfig.Path, 0755)
+		if err != nil && !errors.Is(err, os.ErrExist) {
+			log.Printf("cannot create folder, for certificate %s: %s", certificateConfig.Name, err)
+		}
 
-		certExists := certificateConfig.CertificateExists()
-		if !force && certExists {
-			isOkay, err := certificateConfig.IsOkay()
+		isOkay, err := certificateConfig.IsOkay()
+		if err != nil {
+			log.Printf("error getting certificate %s validity: %s", certificateConfig.Name, err)
+			continue
+		}
+
+		if isOkay == false {
+			//renewing certificate if it is not okay
+			err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 			if err != nil {
-				log.Printf("error getting certificate %s validity: %s", certificateConfig.Name, err)
-				continue
+				log.Printf("error renewing certificate %s: %s", certificateConfig.Name, err)
+			} else {
+				log.Printf("%s: renewed successfully\n", certificateConfig.Name)
+				renewedCerts = append(renewedCerts, certificateConfig.Name)
 			}
 
-			if isOkay == false {
-
-				//renewing certificate if it is the time
+		} else {
+			if force {
+				//renewing certificate even if it is still valid
 				err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 				if err != nil {
 					log.Printf("error renewing certificate %s: %s", certificateConfig.Name, err)
-				} else {
-					log.Printf("%s: renewed successfully\n", certificateConfig.Name)
-					renewedCerts = append(renewedCerts, certificateConfig.Name)
-				}
 
+				} else {
+					log.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
+					renewedCerts = append(renewedCerts, certificateConfig.Name)
+
+				}
 			} else {
 				remainingDays, err := certificateConfig.GetValidDaysRemaining()
 				if err != nil {
 					log.Printf("error geting remaining days of certficate %s:%s", certificateConfig.Name, err)
+					remainingDays = -1
 				}
 				log.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(remainingDays))
 			}
 
-			continue
-
-		} else {
-			err := os.MkdirAll(certificateConfig.Path, 0755)
-			if err != nil && !errors.Is(err, os.ErrExist) {
-				return renewedCerts, err
-			}
-
-			//renewing certificate even if it exist and it is not its time yet
-			err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
-			if err != nil {
-				log.Printf("error renewing certificate %s: %s", certificateConfig.Name, err)
-
-			} else {
-				log.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
-				renewedCerts = append(renewedCerts, certificateConfig.Name)
-
-			}
-
-			continue
 		}
 
 	}

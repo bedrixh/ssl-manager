@@ -14,7 +14,7 @@ import (
 
 func GenerateCACert(certConfig *config.CertificateConfig) error {
 	if certConfig == nil {
-		return fmt.Errorf("GenerateSSLCert cannot accept nil CertConfig")
+		return fmt.Errorf("GenerateCACert cannot accept nil CertConfig")
 	}
 
 	privateKey, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
