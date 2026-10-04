@@ -127,7 +127,7 @@ func renewCerts(force bool) ([]string, error) {
 		if err != nil && !errors.Is(err, os.ErrExist) {
 			errString := fmt.Sprintf("cannot create folder, for certificate %s: %s\n", certificateConfig.Name, err)
 			log.Println(errString)
-			returnErrs = append(returnErrs, fmt.Errorf(errString))
+			returnErrs = append(returnErrs, fmt.Errorf("%s", errString))
 			continue
 		}
 
@@ -135,7 +135,7 @@ func renewCerts(force bool) ([]string, error) {
 		if err != nil {
 			errString := fmt.Sprintf("error getting certificate %s validity: %s", certificateConfig.Name, err)
 			log.Println(errString)
-			returnErrs = append(returnErrs, fmt.Errorf(errString))
+			returnErrs = append(returnErrs, fmt.Errorf("%s", errString))
 			continue
 		}
 
@@ -145,7 +145,7 @@ func renewCerts(force bool) ([]string, error) {
 			if err != nil {
 				errString := fmt.Sprintf("error renewing certificate %s: %s", certificateConfig.Name, err)
 				log.Println(errString)
-				returnErrs = append(returnErrs, fmt.Errorf(errString))
+				returnErrs = append(returnErrs, fmt.Errorf("%s", errString))
 			} else {
 				log.Printf("%s: renewed successfully\n", certificateConfig.Name)
 				renewedCerts = append(renewedCerts, certificateConfig.Name)
@@ -159,7 +159,7 @@ func renewCerts(force bool) ([]string, error) {
 					errString := fmt.Sprintf("error renewing certificate %s: %s", certificateConfig.Name, err)
 
 					log.Println(errString)
-					returnErrs = append(returnErrs, fmt.Errorf(errString))
+					returnErrs = append(returnErrs, fmt.Errorf("%s", errString))
 
 				} else {
 					log.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
@@ -171,7 +171,7 @@ func renewCerts(force bool) ([]string, error) {
 				if err != nil {
 					errString := fmt.Sprintf("error geting remaining days of certficate %s:%s", certificateConfig.Name, err)
 					log.Println(errString)
-					returnErrs = append(returnErrs, fmt.Errorf(errString))
+					returnErrs = append(returnErrs, fmt.Errorf("%s", errString))
 					remainingDays = -1
 				}
 				log.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(remainingDays))
