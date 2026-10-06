@@ -20,97 +20,94 @@ var (
 	BuildTime = "unknown"
 )
 
+// cli flags
+var (
+	argHelpPtr     *bool
+	argConfFilePtr *string
+	argForcePtr    *bool
+)
+
+// cli subcommands options
+var (
+	subcommandOptions map[string]subcommandOption = map[string]subcommandOption{
+		"version": {
+			helpMessage: "Shows ssl-manager version",
+			function:    cliVersion,
+			loadConfig:  false,
+		},
+		"daemon": {
+			helpMessage: "Starts daemon mode",
+			function:    cliDaemon,
+			loadConfig:  true,
+		},
+		"check-config": {
+			helpMessage: "Starts daemon mode",
+			function:    cliCheckConfig,
+			loadConfig:  true,
+		},
+		"gen-ca": {
+			helpMessage: "Generates CA certificates",
+			function:    cliGenCA,
+			loadConfig:  true,
+		},
+		"renew-certs": {
+			helpMessage: "Starts daemon mode",
+			function:    cliRenewCerts,
+			loadConfig:  true,
+		},
+	}
+)
+
+type subcommandOption struct {
+	helpMessage string
+	loadConfig  bool
+	function    func() error
+}
+
 func main() {
-	argConfFilePtr := flag.String("config", "/etc/ssl-manager/ssl-manager.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
-	argGenCAPtr := flag.Bool("gen-cas", false, "Generates certification authority certificates and stores them in configured folder")
-	argRenewCertsPtr := flag.Bool("renew-certs", false, "Creates missing certificates and renews certificates that will expire soon")
-	argForcePtr := flag.Bool("force", false, "Forces certificate generation, even when certificates already exist")
-	argVersionPtr := flag.Bool("version", false, "Print version information and exit")
-	argCheckConfigPtr := flag.Bool("check-config", false, "Checks config file passed in config argument, writes out configuration of ssl-manager in json")
-	argDaemonPtr := flag.Bool("daemon", false, "ssl-manager runs as daemon and renews certificates automatically, other flags than config are ignored")
-	flag.Parse()
-
-	if *argVersionPtr {
-		fmt.Printf("ssl-manager %s (commit %s, built %s)\n", Version, Commit, BuildTime)
-		os.Exit(0)
+	if len(os.Args) < 2 {
+		cliUsage()
+		os.Exit(1)
 	}
+	argHelpPtr = flag.Bool("help", false, "Shows this help message")
+	argConfFilePtr = flag.String("config", "/etc/ssl-manager/ssl-manager.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
+	argForcePtr = flag.Bool("force", false, "Forces certificate generation, even when certificates already exist (only usable in gen-ca and renew-certs)")
+	flag.CommandLine.Parse(os.Args[2:])
 
-	var err error
-	err = config.LoadAppConfig(*argConfFilePtr)
-	if err != nil {
-		switch {
-		case errors.Is(err, os.ErrNotExist):
-			log.Fatalf("Config file \"%s\" does not exist.", *argConfFilePtr)
-		case errors.Is(err, os.ErrPermission):
-			log.Fatalf("Config file \"%s\" incorect permissions.", *argConfFilePtr)
-		default:
-			log.Fatalln(err.Error())
+	subcommand, ok := subcommandOptions[os.Args[1]]
+	if !ok {
+		cliUsage()
+		os.Exit(1)
+	}
+	// if *argHelpPtr || subcommand == subcommandHelp.name {
+	// 	subcommandHelp.function()
+	// 	os.Exit(0)
+	// }
+
+	if subcommand.loadConfig {
+		var err error
+		err = config.LoadAppConfig(*argConfFilePtr)
+		if err != nil {
+			switch {
+			case errors.Is(err, os.ErrNotExist):
+				log.Fatalf("Config file \"%s\" does not exist.", *argConfFilePtr)
+			case errors.Is(err, os.ErrPermission):
+				log.Fatalf("Config file \"%s\" incorect permissions.", *argConfFilePtr)
+			default:
+				log.Fatalln(err.Error())
+			}
+
 		}
-
+		_, err = config.GetConfig()
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
-
-	appConfig, err := config.GetConfig()
+	err := subcommand.function()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if *argCheckConfigPtr {
-		err := config.LoadAppConfig(*argConfFilePtr)
-		if err != nil {
-			fmt.Printf("error configuration invalid (%s)", err)
-			os.Exit(1)
-		} else {
-
-			fmt.Printf("Configuration is valid\n\n")
-			// JSON seems like the easiest-to-read format; it is not easy to write, but for this purpose it seems best to me.
-			json, err := appConfig.GetFormattedJson()
-			if err != nil {
-				fmt.Printf("error rendering json: %s", err)
-				os.Exit(1)
-			}
-
-			fmt.Println(json)
-		}
-		os.Exit(0)
-	}
-
-	if *argDaemonPtr {
-		err = runDaemon()
-		if err != nil {
-			log.Fatalln(err)
-		} else {
-			os.Exit(0)
-		}
-	}
-
-	if *argGenCAPtr {
-		for i := range len(appConfig.CACertificates) {
-			err := os.MkdirAll(appConfig.CACertificates[i].Path, os.FileMode(0775))
-			if err != nil {
-				panic(err)
-			}
-			certExists := appConfig.CACertificates[i].CertificateExists()
-			if (!certExists) || (certExists && *argForcePtr) {
-				err = certificates.GenerateCACert(&appConfig.CACertificates[i])
-				if err != nil {
-					panic(fmt.Errorf("error generating CA certificate: %s", err))
-				}
-			} else {
-				panic("CA Certificate already exists, if you want to overwrite the old one use the --force argument")
-			}
-		}
-	}
-
-	if *argRenewCertsPtr {
-		_, err := renewCerts(*argForcePtr)
-		if err != nil {
-			panic(fmt.Errorf("error renewing certificates: %w", err))
-		}
-	}
-
-	if !*argGenCAPtr && !*argRenewCertsPtr {
-		flag.PrintDefaults()
-	}
 }
 
 func renewCerts(force bool) ([]string, error) {
@@ -184,7 +181,7 @@ func renewCerts(force bool) ([]string, error) {
 	return renewedCerts, returnErr
 }
 
-func runDaemon() error {
+func cliDaemon() error {
 	appConfig, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -211,4 +208,69 @@ func runDaemon() error {
 		<-ticker.C
 	}
 
+}
+
+func cliUsage() error {
+	fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [command] [flags]\n\n", os.Args[0])
+
+	fmt.Fprintln(flag.CommandLine.Output(), "Subcommands:")
+	for i, subcommand := range subcommandOptions {
+		fmt.Fprintf(flag.CommandLine.Output(), "  %s		%s\n", i, subcommand.helpMessage)
+	}
+	fmt.Fprintln(flag.CommandLine.Output(), "\nFlags:")
+	flag.PrintDefaults()
+	return nil
+}
+
+func cliVersion() error {
+	fmt.Printf("ssl-manager %s (commit %s, built %s)\n", Version, Commit, BuildTime)
+	return nil
+}
+
+func cliCheckConfig() error {
+	err := config.LoadAppConfig(*argConfFilePtr)
+	if err != nil {
+		return fmt.Errorf("error configuration invalid (%s)", err)
+
+	} else {
+
+		fmt.Printf("Configuration is valid.\n\n")
+		// JSON seems like the easiest-to-read format; it is not easy to write, but for this purpose it seems best to me.
+		json, err := config.GetConfigNoErr().GetFormattedJson()
+		if err != nil {
+			return fmt.Errorf("error rendering json: %w", err)
+		}
+
+		fmt.Println(json)
+	}
+	return nil
+}
+
+func cliGenCA() error {
+	for i := range len(config.GetConfigNoErr().CACertificates) {
+		err := os.MkdirAll(config.GetConfigNoErr().CACertificates[i].Path, os.FileMode(0775))
+		if err != nil {
+			return err
+		}
+		certExists := config.GetConfigNoErr().CACertificates[i].CertificateExists()
+		if (!certExists) || (certExists && *argForcePtr) {
+			err = certificates.GenerateCACert(&config.GetConfigNoErr().CACertificates[i])
+			if err != nil {
+				log.Printf("error generating CA certificate %s: %s", config.GetConfigNoErr().CACertificates[i].Name, err)
+			} else {
+				log.Printf("CA Certificate %s generated successfully.", config.GetConfigNoErr().CACertificates[i].Name)
+			}
+		} else {
+			log.Printf("CA Certificate %s already exists, if you want to overwrite the old one use the --force argument.", config.GetConfigNoErr().CACertificates[i].Name)
+		}
+	}
+	return nil
+}
+
+func cliRenewCerts() error {
+	_, err := renewCerts(*argForcePtr)
+	if err != nil {
+		return fmt.Errorf("error renewing certificates: %w", err)
+	}
+	return nil
 }

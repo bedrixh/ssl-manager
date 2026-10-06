@@ -26,10 +26,11 @@ Default config file path is /etc/ssl-manager/ssl-manager.yaml.
 Example configuration files are in example-config.toml and example-config.yaml.
 
 ## Usage  
-The most important argument is `--help`:
+The most important argument is `--help`
 
-```bash
-./ssl-manager --help
-```
+`--config` to choose a configuration file. `--check-config` validates the file and prints the parsed configuration as JSON.
+`--gen-cas` generates configured CAs, and `--renew-certs` checks and renews leaf certificates.
+`--force` regenerates certificates that would otherwise be considered current (be aware, it can overwrite your CA certificates, it is better to delete/move the specific CA you ned to renew and run with `--gen-cas`).
+`--daemon` performs an immediate renewal check at startup and repeats it at the configured `Daemon.RenewIntervalDays`.
 
 **I am just a beginner in Go. Every pull request is welcome.**

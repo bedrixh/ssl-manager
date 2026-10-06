@@ -71,8 +71,12 @@ func replaceMapVariables(mapToReplace map[string]string, renewedCerts []string, 
 			message = fmt.Sprintf("Certificates were renewed successfully (%s)", strings.Join(renewedCerts, ", "))
 			status = "success"
 		} else {
-			message = certRenewError.Error()
-			status = "failed"
+			if len(renewedCerts) == 0 {
+				message = certRenewError.Error()
+				status = "failed"
+			} else {
+				message = fmt.Sprintf("Errors occured while renewing some certificates (%s) and %d certificates were renewed successfully (%s)", certRenewError, len(renewedCerts), strings.Join(renewedCerts, ", "))
+			}
 		}
 		mapToReplaceCopy[k] = mapToReplace[k]
 		mapToReplaceCopy[k] = strings.ReplaceAll(mapToReplaceCopy[k], "%message%", message)
