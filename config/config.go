@@ -199,9 +199,13 @@ func LoadAppConfig(path string) error {
 		{
 			config, err = loadYamlConfig(configBytes)
 		}
+	case strings.HasSuffix(path, ".yml"):
+		{
+			config, err = loadYamlConfig(configBytes)
+		}
 	default:
 		{
-			err = fmt.Errorf("unknown file type, use json, toml or yaml")
+			err = fmt.Errorf("unknown file type, use json, toml or yaml/yml")
 		}
 	}
 	if err != nil {

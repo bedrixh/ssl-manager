@@ -1,6 +1,8 @@
 services:
   ssl-manager:
     build: ./
+    environemnt:
+      SSL_MANAGER_CONFIG_FILE: /app/conf.yaml
     volumes:
       - ./certs:/app/certs
       - ./conf.yaml:/app/conf.yaml

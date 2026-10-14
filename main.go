@@ -77,13 +77,6 @@ func main() {
 	argConfFilePtr = flag.String("config", "", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
 	argForcePtr = flag.Bool("force", false, "Forces certificate generation, even when certificates already exist (only usable in gen-ca and renew-certs)")
 
-	if os.Args[1] == "completions" {
-		if os.Args[2] == "fish" {
-			cliCompletionsFish()
-		}
-		os.Exit(0)
-	}
-
 	if len(os.Args) < 2 {
 		cliUsage()
 		os.Exit(1)
@@ -273,17 +266,5 @@ func cliRenewCerts() error {
 	if err != nil {
 		return fmt.Errorf("error renewing certificates: %w", err)
 	}
-	return nil
-}
-
-func cliCompletionsFish() error {
-	for subCommand, option := range subcommandOptions {
-		fmt.Printf("complete -c ssl-manager -f -n '__fish_use_subcommand' -a %s -d '%s'\n", subCommand, option.helpMessage)
-	}
-
-	flag.VisitAll(func(f *flag.Flag) {
-		fmt.Printf("complete -c ssl-manager -s h -l %s -d '%s'\n", f.Name, f.Usage)
-	})
-
 	return nil
 }
