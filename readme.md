@@ -28,7 +28,7 @@ Example configuration files are in example-config.toml and example-config.yaml.
 
 ## Usage  
 The most important argument is `--help`
-
+```bash
 Usage of bin/ssl-manager:
   -check-config
     	Checks config file passed in config argument
@@ -44,5 +44,5 @@ Usage of bin/ssl-manager:
     	Creates missing certificates and renews certificates that will expire soon
   -version
     	Print version information and exit
-
+```
 **I am just a beginner in Go. Every pull request is welcome.**
