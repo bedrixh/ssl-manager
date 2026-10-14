@@ -28,7 +28,7 @@ Example configuration files are in example-config.toml and example-config.yaml.
 
 ## Usage  
 The most important argument is `--help`
-```bash
+```md
 Usage of bin/ssl-manager:
   -check-config
     	Checks config file passed in config argument
