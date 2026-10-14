@@ -29,9 +29,20 @@ Example configuration files are in example-config.toml and example-config.yaml.
 ## Usage  
 The most important argument is `--help`
 
-`--config` to choose a configuration file. `--check-config` validates the file and prints the parsed configuration as JSON.
-`--gen-cas` generates configured CAs, and `--renew-certs` checks and renews leaf certificates.
-`--force` regenerates certificates that would otherwise be considered current (be aware, it can overwrite your CA certificates, it is better to delete/move the specific CA you ned to renew and run with `--gen-cas`).
-`--daemon` performs an immediate renewal check at startup and repeats it at the configured `Daemon.RenewIntervalDays`.
+Usage of bin/ssl-manager:
+  -check-config
+    	Checks config file passed in config argument
+  -config string
+    	Config file to be loaded on the start of the program (can be json, toml or yaml) (default "/etc/ssl-manager/conf.yaml")
+  -daemon
+    	ssl-manager runs as daemon and renews certificates automaticaly, other flags than config are ignored
+  -force
+    	Forces certificate generation, even when certificates already exists
+  -gen-ca
+    	Generates certification authority certificate and stores it on the disk
+  -renew-certs
+    	Creates missing certificates and renews certificates that will expire soon
+  -version
+    	Print version information and exit
 
 **I am just a beginner in Go. Every pull request is welcome.**
