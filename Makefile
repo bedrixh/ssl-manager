@@ -11,7 +11,8 @@ compile:
 	GOOS=linux   GOARCH=arm   go build $(GO_LDFLAGS) -o bin/ssl-manager-linux-arm   .
 	GOOS=linux   GOARCH=arm64 go build $(GO_LDFLAGS) -o bin/ssl-manager-linux-arm64 .
 	GOOS=freebsd GOARCH=386   go build $(GO_LDFLAGS) -o bin/ssl-manager-freebsd-386 .
-	GOOS=windows GOARCH=amd64 go build $(GO_LDFLAGS) -o bin/ssl-manager-windows-amd64.exe .
+#	Windows is not currently supported
+#	GOOS=windows GOARCH=amd64 go build $(GO_LDFLAGS) -o bin/ssl-manager-windows-amd64.exe .
 
 build:
 	@echo "Building for your architecture"

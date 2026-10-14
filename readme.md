@@ -13,10 +13,10 @@ Clone the repo and build using GNU make.
 ```bash
 git clone https://github.com/bedrixh/ssl-manager.git
 cd ssl-manager
-git switch "$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=creatordate | tail -n 1)"
+git switch "$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=creatordate | tail -n 1)" --detach
 make build          # builds for your current OS/arch
 # or
-make compile        # builds for Linux, macOS, and Windows (outputs to ./bin/)
+make compile        # builds for Linux, macOS (outputs to ./bin/)
 ```
 
 The binary (`ssl-manager` or `ssl-manager.exe`) is written to ./bin/.
