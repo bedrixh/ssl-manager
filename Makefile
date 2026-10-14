@@ -1,5 +1,5 @@
 
-.PHONY: compile build install uninstall clean
+.PHONY: compile build install uninstall clean run
 
 RM       = rm -f
 PREFIX   ?= /usr/local
@@ -28,3 +28,7 @@ uninstall:
 clean:
 	@echo Cleaning build targets
 	${RM} bin/ssl-manager 
+
+run: build
+	@echo Executing binary
+	bin/ssl-manager

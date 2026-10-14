@@ -13,6 +13,7 @@ Clone the repo and build using GNU make.
 ```bash
 git clone https://github.com/bedrixh/ssl-manager.git
 cd ssl-manager
+git switch "$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=creatordate | tail -n 1)"
 make build          # builds for your current OS/arch
 # or
 make compile        # builds for Linux, macOS, and Windows (outputs to ./bin/)

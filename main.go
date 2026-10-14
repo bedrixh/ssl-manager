@@ -11,6 +11,8 @@ import (
 	"ssl-manager/certificates"
 	"ssl-manager/config"
 	notification "ssl-manager/notifications"
+
+	"github.com/fatih/color"
 )
 
 var (
@@ -27,6 +29,12 @@ var (
 	argForcePtr    *bool
 )
 
+// ENV variables name specification
+const (
+	envConfigPrefix   = "SSL_MANAGER_"
+	envConfigFileName = envConfigPrefix + "CONFIG_FILE"
+)
+
 // cli subcommands options
 var (
 	subcommandOptions map[string]subcommandOption = map[string]subcommandOption{
@@ -41,7 +49,7 @@ var (
 			loadConfig:  true,
 		},
 		"check-config": {
-			helpMessage: "Starts daemon mode",
+			helpMessage: "Validates configuration file",
 			function:    cliCheckConfig,
 			loadConfig:  true,
 		},
@@ -65,24 +73,27 @@ type subcommandOption struct {
 }
 
 func main() {
+
+	argHelpPtr = flag.Bool("help", false, "Shows this help message")
+	argConfFilePtr = flag.String("config", "", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
+	argForcePtr = flag.Bool("force", false, "Forces certificate generation, even when certificates already exist (only usable in gen-ca and renew-certs)")
+
 	if len(os.Args) < 2 {
 		cliUsage()
 		os.Exit(1)
 	}
-	argHelpPtr = flag.Bool("help", false, "Shows this help message")
-	argConfFilePtr = flag.String("config", "/etc/ssl-manager/ssl-manager.yaml", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
-	argForcePtr = flag.Bool("force", false, "Forces certificate generation, even when certificates already exist (only usable in gen-ca and renew-certs)")
+
 	flag.CommandLine.Parse(os.Args[2:])
+
+	if envConfigFile, envConfigFileExists := os.LookupEnv(envConfigFileName); *argConfFilePtr == "" && envConfigFileExists {
+		*argConfFilePtr = envConfigFile
+	}
 
 	subcommand, ok := subcommandOptions[os.Args[1]]
 	if !ok {
 		cliUsage()
 		os.Exit(1)
 	}
-	// if *argHelpPtr || subcommand == subcommandHelp.name {
-	// 	subcommandHelp.function()
-	// 	os.Exit(0)
-	// }
 
 	if subcommand.loadConfig {
 		var err error
@@ -136,43 +147,27 @@ func renewCerts(force bool) ([]string, error) {
 			continue
 		}
 
-		if isOkay == false {
+		if isOkay == false || force {
 			//renewing certificate if it is not okay
 			err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
 			if err != nil {
-				errStringDetail := fmt.Errorf("error renewing certificate %s: %w", certificateConfig.Name, err)
+				errStringDetail := fmt.Errorf("error generating certificate %s: %w", certificateConfig.Name, err)
 				log.Println(errStringDetail)
 				returnErrs = append(returnErrs, errStringDetail)
 			} else {
-				log.Printf("%s: renewed successfully\n", certificateConfig.Name)
+				log.Printf("%s: generated successfully\n", certificateConfig.Name)
 				renewedCerts = append(renewedCerts, certificateConfig.Name)
 			}
 
 		} else {
-			if force {
-				//renewing certificate even if it is still valid
-				err = certificates.GenerateSSLCert(certificateConfig, appConfig.GetCACertConfigByName(certificateConfig.CACertName))
-				if err != nil {
-					errWithDetail := fmt.Errorf("error renewing certificate %s: %w", certificateConfig.Name, err)
-
-					log.Println(errWithDetail)
-					returnErrs = append(returnErrs, errWithDetail)
-
-				} else {
-					log.Printf("\"%s\": generated successfully\n", certificateConfig.Name)
-					renewedCerts = append(renewedCerts, certificateConfig.Name)
-
-				}
-			} else {
-				remainingDays, err := certificateConfig.GetValidDaysRemaining()
-				if err != nil {
-					errStringDetail := fmt.Errorf("error geting remaining days of certficate %s:%w", certificateConfig.Name, err)
-					log.Println(errStringDetail)
-					returnErrs = append(returnErrs, errStringDetail)
-					remainingDays = -1
-				}
-				log.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(remainingDays))
+			remainingDays, err := certificateConfig.GetValidDaysRemaining()
+			if err != nil {
+				errStringDetail := fmt.Errorf("error geting remaining days of certficate %s:%w", certificateConfig.Name, err)
+				log.Println(errStringDetail)
+				returnErrs = append(returnErrs, errStringDetail)
+				remainingDays = -1
 			}
+			log.Printf("\"%s\": not renewing, expires in %d days\n", certificateConfig.Name, int(remainingDays))
 
 		}
 
@@ -211,11 +206,11 @@ func cliDaemon() error {
 }
 
 func cliUsage() error {
-	fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [command] [flags]\n\n", os.Args[0])
+	fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [subcommand] [flags]\n\n", color.HiBlueString(os.Args[0]))
 
 	fmt.Fprintln(flag.CommandLine.Output(), "Subcommands:")
 	for i, subcommand := range subcommandOptions {
-		fmt.Fprintf(flag.CommandLine.Output(), "  %s		%s\n", i, subcommand.helpMessage)
+		fmt.Fprintf(flag.CommandLine.Output(), "  %s\n\t%s\n", color.HiGreenString(i), color.RedString(subcommand.helpMessage))
 	}
 	fmt.Fprintln(flag.CommandLine.Output(), "\nFlags:")
 	flag.PrintDefaults()
@@ -223,7 +218,7 @@ func cliUsage() error {
 }
 
 func cliVersion() error {
-	fmt.Printf("ssl-manager %s (commit %s, built %s)\n", Version, Commit, BuildTime)
+	fmt.Printf("%s %s (Commit: %s, Build Date: %s)\n", color.HiBlueString("ssl-manager"), color.HiGreenString(Version), Commit, BuildTime)
 	return nil
 }
 
