@@ -89,6 +89,22 @@ func (c *CertificateConfig) SaveKeyToDisk(privateKey *ecdsa.PrivateKey) error {
 	return nil
 }
 
+func (c *CertificateConfig) RemoveCertFromDisk() error {
+	err := os.Remove(c.GetCertPath())
+	if err != nil && os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func (c *CertificateConfig) RemoveKeyFromDisk() error {
+	err := os.Remove(c.GetKeyPath())
+	if err != nil && os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 func (c *CertificateConfig) GetValidDaysRemaining() (int64, error) {
 	cert, err := c.GetCertFromDisk()
 	if err != nil {

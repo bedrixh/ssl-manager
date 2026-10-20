@@ -49,6 +49,16 @@ func GenerateCACert(certConfig *config.CertificateConfig) error {
 		return err
 	}
 
+	err = certConfig.RemoveCertFromDisk()
+	if err != nil {
+		return fmt.Errorf("unable to delete of certificate file: %w", err)
+	}
+
+	err = certConfig.RemoveKeyFromDisk()
+	if err != nil {
+		return fmt.Errorf("unable to delete of certificate key file: %w", err)
+	}
+
 	err = certConfig.SaveKeyToDisk(privateKey)
 	if err != nil {
 		return err

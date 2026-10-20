@@ -55,7 +55,7 @@ var (
 		},
 		"gen-ca": {
 			helpMessage: "Generates CA certificates",
-			function:    cliGenCA,
+			function:    cliGenCAs,
 			loadConfig:  true,
 		},
 		"renew-certs": {
@@ -240,7 +240,7 @@ func cliCheckConfig() error {
 	return nil
 }
 
-func cliGenCA() error {
+func cliGenCAs() error {
 	for i := range len(config.GetConfigNoErr().CACertificates) {
 		err := os.MkdirAll(config.GetConfigNoErr().CACertificates[i].Path, os.FileMode(0775))
 		if err != nil {
