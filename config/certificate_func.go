@@ -91,7 +91,7 @@ func (c *CertificateConfig) SaveKeyToDisk(privateKey *ecdsa.PrivateKey) error {
 
 func (c *CertificateConfig) RemoveCertFromDisk() error {
 	err := os.Remove(c.GetCertPath())
-	if err != nil && os.IsNotExist(err) {
+	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
@@ -99,7 +99,7 @@ func (c *CertificateConfig) RemoveCertFromDisk() error {
 
 func (c *CertificateConfig) RemoveKeyFromDisk() error {
 	err := os.Remove(c.GetKeyPath())
-	if err != nil && os.IsNotExist(err) {
+	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
