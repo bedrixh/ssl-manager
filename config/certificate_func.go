@@ -89,16 +89,32 @@ func (c *CertificateConfig) SaveKeyToDisk(privateKey *ecdsa.PrivateKey) error {
 	return nil
 }
 
-func (c *CertificateConfig) RemoveCertFromDisk() error {
-	err := os.Remove(c.GetCertPath())
+func (c *CertificateConfig) MoveCertToOld() error {
+	err := os.Rename(c.GetCertPath(), c.GetCertPath()+".old")
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
 }
 
-func (c *CertificateConfig) RemoveKeyFromDisk() error {
-	err := os.Remove(c.GetKeyPath())
+func (c *CertificateConfig) MoveKeyToOld() error {
+	err := os.Rename(c.GetKeyPath(), c.GetKeyPath()+".old")
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func (c *CertificateConfig) MoveOldCertToCurrent() error {
+	err := os.Rename(c.GetCertPath()+".old", c.GetCertPath())
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func (c *CertificateConfig) MoveOldKeyToCurrent() error {
+	err := os.Rename(c.GetKeyPath()+".old", c.GetKeyPath())
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}

@@ -7,11 +7,11 @@ COPY . .
 
 RUN make build
 
-FROM alpine:3.23
+FROM alpine:3.24
 
 WORKDIR /app
 
 COPY --from=build /app/bin/ssl-manager /app
 
-CMD ["./ssl-manager", "--daemon", "--config","/app/conf.yaml"]
+CMD ["./ssl-manager", "daemon", "--config","/app/conf.yaml"]
 
