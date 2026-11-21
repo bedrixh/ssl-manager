@@ -12,14 +12,16 @@ import (
 )
 
 func SendCertRenewNotifications(webhooks []config.NotificationWebhook, renewedCerts []string, certRenewError error) error {
+	var errs []error
 	for _, webhook := range webhooks {
 		if (certRenewError == nil && webhook.NotifySuccess) || (certRenewError != nil && webhook.NotifyFail) {
 			err := SendCertRenewNotification(&webhook, renewedCerts, certRenewError)
 			if err != nil {
-				return err
+				errs = append(errs, err)
 			}
 		}
 	}
+
 	return nil
 
 }

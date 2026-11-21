@@ -1,0 +1,90 @@
+{
+  "Daemon": {
+    "RenewIntervalDays": 7,
+    "NotificationWebhooks": [
+      {
+        "Name": "slack",
+        "Url": "https://hooks.slack.com/services/some-other-stuff",
+        "PostData": {
+          "text": "ssl-manager %status% - %message%"
+        },
+        "NotifyFail": true,
+        "NotifySuccess": false
+      }
+    ],
+    "LiveConfigReload": ""
+  },
+  "CACertificates": [
+    {
+      "Name": "RootCA",
+      "Path": "./pki/CA/",
+      "UserOwner": "",
+      "GroupOwner": "",
+      "KeyPermissions": 384,
+      "CertPermissions": 420,
+      "CACertName": "",
+      "OrganizationName": "john doe CA",
+      "Email": "johndoe@example.com",
+      "IPs": null,
+      "DNSNames": null,
+      "ValidDays": 79000,
+      "RenewThresholdDays": 30
+    }
+  ],
+  "Certificates": [
+    {
+      "Name": "service-frontend",
+      "Path": "./pki/frontend",
+      "UserOwner": "",
+      "GroupOwner": "",
+      "KeyPermissions": 384,
+      "CertPermissions": 420,
+      "CACertName": "RootCA",
+      "OrganizationName": "Acme Corp",
+      "Email": "admin@acme.example",
+      "IPs": [
+        "10.0.0.12"
+      ],
+      "DNSNames": [
+        "frontend.acme.example"
+      ],
+      "ValidDays": 20,
+      "RenewThresholdDays": 8
+    },
+    {
+      "Name": "service-backend",
+      "Path": "./pki/backend",
+      "UserOwner": "",
+      "GroupOwner": "",
+      "KeyPermissions": 384,
+      "CertPermissions": 420,
+      "CACertName": "RootCA",
+      "OrganizationName": "Acme Backend Team",
+      "Email": "backend-admin@acme.example",
+      "IPs": [
+        "10.0.0.13",
+        "10.0.0.14"
+      ],
+      "DNSNames": [
+        "backend.acme.example"
+      ],
+      "ValidDays": 20,
+      "RenewThresholdDays": 8
+    }
+  ],
+  "CertificatesDefaults": {
+    "Name": "",
+    "Path": "",
+    "UserOwner": "",
+    "GroupOwner": "",
+    "KeyPermissions": 384,
+    "CertPermissions": 420,
+    "CACertName": "RootCA",
+    "OrganizationName": "Acme Corp",
+    "Email": "admin@acme.example",
+    "IPs": null,
+    "DNSNames": null,
+    "ValidDays": 20,
+    "RenewThresholdDays": 8
+  }
+}

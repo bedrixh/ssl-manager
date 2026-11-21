@@ -76,6 +76,7 @@ func main() {
 	argHelpPtr = flag.Bool("help", false, "Shows this help message")
 	argConfFilePtr = flag.String("config", "", "Config file to be loaded on the start of the program (can be json, toml or yaml)")
 	argForcePtr = flag.Bool("force", false, "Forces certificate generation, even when certificates already exist (only usable in gen-ca and renew-certs)")
+	iferr
 
 	if len(os.Args) < 2 {
 		cliUsage()
@@ -115,12 +116,12 @@ func main() {
 	}
 	err := subcommand.function()
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
 
 }
 
-func renewCerts(force bool) ([]string, error) {
+func renewCerts(force bool, regexName string) ([]string, error) {
 	appConfig, err := config.GetConfig()
 	renewedCerts := make([]string, 0)
 	if err != nil {
@@ -185,7 +186,7 @@ func cliDaemon() error {
 	defer ticker.Stop()
 
 	for {
-		renewedCerts, certRenewErr := renewCerts(false)
+		renewedCerts, certRenewErr := renewCerts(false, "")
 
 		// Send notification to user if any certificate is renewed or error ocures
 		if len(renewedCerts) > 0 || certRenewErr != nil {
@@ -262,7 +263,7 @@ func cliGenCAs() error {
 }
 
 func cliRenewCerts() error {
-	_, err := renewCerts(*argForcePtr)
+	_, err := renewCerts(*argForcePtr, "")
 	if err != nil {
 		return fmt.Errorf("error renewing certificates: %w", err)
 	}

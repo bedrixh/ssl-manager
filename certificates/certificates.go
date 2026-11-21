@@ -49,18 +49,20 @@ func GenerateCACert(certConfig *config.CertificateConfig) error {
 		return err
 	}
 
-	err = certConfig.RemoveCertFromDisk()
+	err = certConfig.MoveCertToOld()
 	if err != nil {
-		return fmt.Errorf("unable to delete of certificate file: %w", err)
+		return fmt.Errorf("unable to move old certificate file: %w", err)
 	}
 
-	err = certConfig.RemoveKeyFromDisk()
+	err = certConfig.MoveKeyToOld()
 	if err != nil {
-		return fmt.Errorf("unable to delete of certificate key file: %w", err)
+		return fmt.Errorf("unable to move old certificate key file: %w", err)
 	}
 
 	err = certConfig.SaveKeyToDisk(privateKey)
 	if err != nil {
+		certConfig.MoveOldCertToCurrent()
+		certConfig.MoveOldKeyToCurrent()
 		return err
 	}
 
